@@ -113,7 +113,8 @@
     if (shown.length < list.length) $("moreBtn").textContent = `결과 더 보기 (${list.length - shown.length}종 남음)`;
   }
 
-  function todayIntakes() { const r = store.dayRange(0); return state.intakes.filter((x) => x.consumed_at >= r.from && x.consumed_at < r.to); }
+  function ts(v) { return Date.parse(v); } // 함수 선언(호이스팅) — 위쪽 renderAll() 보다 먼저 정의되어야 함
+  function todayIntakes() { const r = store.dayRange(0); return state.intakes.filter((x) => ts(x.consumed_at) >= ts(r.from) && ts(x.consumed_at) < ts(r.to)); }
   function renderMetrics() {
     const t = store.totals(todayIntakes());
     const limit = state.user.dailyLimit || CFG.DAILY_LIMIT_MG || 400;
@@ -133,7 +134,7 @@
 
   function rangeIntakes() {
     if (state.range === "today") return todayIntakes();
-    if (state.range === "7d") { const from = store.dayRange(6).from; return state.intakes.filter((x) => x.consumed_at >= from); }
+    if (state.range === "7d") { const from = ts(store.dayRange(6).from); return state.intakes.filter((x) => ts(x.consumed_at) >= from); }
     return state.intakes;
   }
   function entryRow(x) {
@@ -152,7 +153,7 @@
     $("historyList").innerHTML = list.length ? list.slice(0, state.range === "all" ? 50 : 100).map(entryRow).join("")
       : `<div class="history__empty">${state.range === "today" ? "오늘은 아직 기록이 없습니다.<br>위에서 음료를 검색해 기록해 보세요." : "해당 기간의 기록이 없습니다."}</div>`;
     // 잔존 카페인 — 최근 2일 기록으로 추정
-    const from = store.dayRange(1).from, recent = state.intakes.filter((x) => x.consumed_at >= from);
+    const from = ts(store.dayRange(1).from), recent = state.intakes.filter((x) => ts(x.consumed_at) >= from);
     const now = store.residual(recent), midnight = store.residual(recent, store.dayRange(-1).from);
     $("residualNote").textContent = `체내 잔존 카페인 약 ${ui.fmtInt(now)} mg · 자정 무렵 약 ${ui.fmtInt(midnight)} mg (반감기 ${CFG.HALF_LIFE_HOURS || 5}시간 기준 추정)`;
     $("residualNote").classList.toggle("note--warn", now >= 100);

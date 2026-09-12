@@ -124,7 +124,7 @@ begin
     lower(new.email),
     coalesce(nullif(new.raw_user_meta_data ->> 'display_name', ''), split_part(new.email, '@', 1)),
     case when exists (select 1 from public.admin_emails a where lower(a.email) = lower(new.email)) then 'admin' else 'user' end,
-    coalesce(nullif(new.raw_user_meta_data ->> 'daily_limit_mg', '')::integer, 400)
+    least(greatest(coalesce(round(nullif(new.raw_user_meta_data ->> 'daily_limit_mg', '')::numeric)::integer, 400), 50), 1500)
   )
   on conflict (id) do nothing;
   return new;

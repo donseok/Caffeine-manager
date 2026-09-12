@@ -166,6 +166,8 @@
   // Supabase 모드
   // ==========================================================================
   function fail(error) { throw new Error(CM.auth.translate(error.message || String(error))); }
+  /** PostgREST 의 timestamptz 표기("+00:00", DB 시간대)를 로컬 모드와 같은 UTC ISO 문자열로 통일 */
+  function normalizeIntake(x) { if (x && x.consumed_at) x.consumed_at = new Date(x.consumed_at).toISOString(); if (x && x.created_at) x.created_at = new Date(x.created_at).toISOString(); return x; }
   const remote = {
     async listProducts(opts) {
       opts = opts || {};
@@ -197,11 +199,11 @@
       if (opts.from) q = q.gte("consumed_at", opts.from);
       if (opts.to) q = q.lt("consumed_at", opts.to);
       if (opts.limit) q = q.limit(opts.limit);
-      const { data, error } = await q; if (error) fail(error); return data || [];
+      const { data, error } = await q; if (error) fail(error); return (data || []).map(normalizeIntake);
     },
     async addIntake(args) {
       if (!user()) throw new Error("로그인이 필요합니다.");
-      const { data, error } = await CM.sb.from("intakes").insert(makeIntakeRow(args)).select("*").single(); if (error) fail(error); return data;
+      const { data, error } = await CM.sb.from("intakes").insert(makeIntakeRow(args)).select("*").single(); if (error) fail(error); return normalizeIntake(data);
     },
     async deleteIntake(id) { const { error } = await CM.sb.from("intakes").delete().eq("id", id); if (error) fail(error); },
 
@@ -265,7 +267,7 @@
     /** 사용자별 상품 최근 결제가 { product_id: { price, at } } */
     latestPrices(intakes) {
       const m = {};
-      intakes.forEach((x) => { if (x.product_id && x.price_paid != null && (!m[x.product_id] || x.consumed_at > m[x.product_id].at)) m[x.product_id] = { price: Number(x.price_paid), at: x.consumed_at }; });
+      intakes.forEach((x) => { if (x.product_id && x.price_paid != null && (!m[x.product_id] || Date.parse(x.consumed_at) > Date.parse(m[x.product_id].at))) m[x.product_id] = { price: Number(x.price_paid), at: x.consumed_at }; });
       return m;
     },
   };

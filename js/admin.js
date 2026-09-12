@@ -81,7 +81,8 @@
   async function saveForm(e) {
     e.preventDefault();
     const g = (k) => $("f_" + k).value;
-    const data = { brand: g("brand"), category: g("category"), name: g("name"), serving_label: g("serving_label"), serving_ml: g("serving_ml"), caffeine_mg: g("caffeine_mg"), sugar_g: g("sugar_g"), kcal: g("kcal"),
+    const existing = state.products.find((x) => x.id === g("id"));
+    const data = { brand: g("brand"), category: g("category"), name: g("name"), brand_key: existing && existing.brand.trim() === g("brand").trim() ? existing.brand_key : undefined, serving_label: g("serving_label"), serving_ml: g("serving_ml"), caffeine_mg: g("caffeine_mg"), sugar_g: g("sugar_g"), kcal: g("kcal"),
       base_price: g("base_price"), price_note: g("price_note"), price_checked_at: g("price_checked_at") || null, source: g("source"), verified_at: g("verified_at") || null, image_url: g("image_url") || null, tags: g("tags") };
     const err = $("f_error"); err.classList.add("hidden");
     if (!data.brand.trim() || !data.name.trim()) { err.textContent = "브랜드와 상품명은 필수입니다."; err.classList.remove("hidden"); return; }

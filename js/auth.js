@@ -29,6 +29,7 @@
     try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { console.warn("localStorage 저장 실패", e); }
   };
   function normalizeEmail(email) { return String(email || "").trim().toLowerCase(); }
+  function clampLimit(v) { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(50, Math.min(1500, n)) : (CFG.DAILY_LIMIT_MG || 400); }
   function validEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
 
   async function sha256(text) {
@@ -77,7 +78,7 @@
       const profile = {
         id: CM.uuid(), email, display_name: (displayName || "").trim() || email.split("@")[0],
         role: ADMIN_EMAILS.includes(email) ? "admin" : "user",
-        daily_limit_mg: Number(dailyLimit) || CFG.DAILY_LIMIT_MG || 400,
+        daily_limit_mg: clampLimit(dailyLimit),
         is_active: true, created_at: new Date().toISOString(),
         salt, password_hash: await sha256(salt + password),
       };
@@ -101,7 +102,7 @@
       const u = users.find((x) => x.id === userId);
       if (!u) throw new Error("사용자를 찾을 수 없습니다.");
       if (patch.displayName != null) u.display_name = String(patch.displayName).trim() || u.display_name;
-      if (patch.dailyLimit != null) u.daily_limit_mg = Math.max(50, Math.min(1500, Number(patch.dailyLimit) || 400));
+      if (patch.dailyLimit != null) u.daily_limit_mg = clampLimit(patch.dailyLimit);
       local.saveUsers(users);
       return toUser(u);
     },
@@ -121,7 +122,7 @@
         const ins = await CM.sb.from("profiles").insert({
           id: authUser.id, email,
           display_name: authUser.user_metadata?.display_name || email.split("@")[0],
-          daily_limit_mg: Number(authUser.user_metadata?.daily_limit_mg) || CFG.DAILY_LIMIT_MG || 400,
+          daily_limit_mg: clampLimit(authUser.user_metadata?.daily_limit_mg),
         }).select("*").maybeSingle();
         data = ins.data;
         if (ins.error) console.warn("profiles 생성 실패", ins.error);
@@ -139,7 +140,7 @@
       if (!password || password.length < 6) throw new Error("비밀번호는 6자 이상이어야 합니다.");
       const { data, error } = await CM.sb.auth.signUp({
         email, password,
-        options: { data: { display_name: (displayName || "").trim() || email.split("@")[0], daily_limit_mg: Number(dailyLimit) || 400 } },
+        options: { data: { display_name: (displayName || "").trim() || email.split("@")[0], daily_limit_mg: clampLimit(dailyLimit) } },
       });
       if (error) throw new Error(translate(error.message));
       // 이메일 확인이 켜져 있으면 session 이 null 로 옵니다.
@@ -159,7 +160,7 @@
     async updateProfile(userId, patch) {
       const row = {};
       if (patch.displayName != null) row.display_name = String(patch.displayName).trim();
-      if (patch.dailyLimit != null) row.daily_limit_mg = Math.max(50, Math.min(1500, Number(patch.dailyLimit) || 400));
+      if (patch.dailyLimit != null) row.daily_limit_mg = clampLimit(patch.dailyLimit);
       const { data, error } = await CM.sb.from("profiles").update(row).eq("id", userId).select("*").single();
       if (error) throw new Error(translate(error.message));
       return toUser(data);
