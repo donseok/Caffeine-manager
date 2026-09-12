@@ -1,0 +1,13 @@
+# OS / 편집기
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 로컬 실험용 설정 (배포용 config.js 는 커밋합니다 — anon key 는 공개용)
+js/config.local.js
+
+# 스크린샷·임시 파일
+/tmp/
+*.log
+node_modules/

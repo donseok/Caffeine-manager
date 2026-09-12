@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>회원가입 — 카페인 매니저</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%231F6F5B'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main class="auth">
+  <section class="auth__card">
+    <div class="auth__brand"><span class="brand__dot"></span><strong class="brand__name">카페인 매니저</strong></div>
+    <h1>회원가입</h1>
+    <p class="auth__lead">이메일과 비밀번호만 있으면 됩니다. 하루 목표는 나중에 설정에서 바꿀 수 있어요.</p>
+    <form class="auth__form" id="form" novalidate>
+      <label class="field"><span class="field__label">이메일</span><input type="email" id="email" autocomplete="username" required placeholder="you@example.com"></label>
+      <label class="field"><span class="field__label">표시 이름 <em>(선택)</em></span><input type="text" id="displayName" autocomplete="nickname" maxlength="30" placeholder="예: 주인"></label>
+      <label class="field"><span class="field__label">비밀번호</span><input type="password" id="password" autocomplete="new-password" required placeholder="6자 이상"></label>
+      <label class="field"><span class="field__label">비밀번호 확인</span><input type="password" id="password2" autocomplete="new-password" required></label>
+      <label class="field"><span class="field__label">하루 카페인 목표 <em>(mg)</em></span><input type="number" id="dailyLimit" value="400" min="50" max="1500" step="10" inputmode="numeric"><small class="field__hint">성인 권고 최대치 400 mg · 임산부 300 mg 이하</small></label>
+      <label class="checkbox"><input type="checkbox" id="agree" required><span>카페인 수치는 참고용이며 이 서비스가 의료 진단을 대신하지 않음을 이해했습니다.</span></label>
+      <div class="form-error hidden" id="error"></div>
+      <div class="form-ok hidden" id="ok"></div>
+      <button type="submit" class="btn-green" id="submitBtn">가입하기</button>
+    </form>
+    <p class="auth__foot">이미 계정이 있나요? <a href="login.html" id="loginLink">로그인</a></p>
+    <div class="auth__mode" id="modeNote"></div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/seed-products.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+(async function () {
+  const CM = window.CM, ui = CM.ui, $ = (id) => document.getElementById(id);
+  const next = ui.qs("next") && /^[\w-]+\.html$/.test(ui.qs("next")) ? ui.qs("next") : "index.html";
+  $("loginLink").href = "login.html?next=" + encodeURIComponent(next);
+  $("modeNote").innerHTML = CM.mode === "supabase" ? "클라우드 모드 · Supabase 인증" : "로컬 모드 · 계정과 기록이 <b>이 브라우저에만</b> 저장됩니다.";
+  await CM.auth.ready;
+  if (CM.auth.getUser()) { location.replace(next); return; }
+  $("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("error"), ok = $("ok"); err.classList.add("hidden"); ok.classList.add("hidden");
+    const email = $("email").value.trim(), password = $("password").value, password2 = $("password2").value;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return show("이메일 형식을 확인해 주세요.");
+    if (password.length < 6) return show("비밀번호는 6자 이상이어야 합니다.");
+    if (password !== password2) return show("비밀번호가 서로 다릅니다.");
+    if (!$("agree").checked) return show("안내 사항에 동의해 주세요.");
+    $("submitBtn").disabled = true; $("submitBtn").textContent = "가입 중…";
+    try {
+      const r = await CM.auth.signUp({ email, password, displayName: $("displayName").value, dailyLimit: $("dailyLimit").value });
+      if (r.needsEmailConfirm) {
+        ok.innerHTML = `<b>${ui.esc(email)}</b> 로 확인 메일을 보냈습니다. 메일의 링크를 누른 뒤 <a href="login.html">로그인</a>해 주세요.`; ok.classList.remove("hidden");
+        $("submitBtn").textContent = "메일을 확인해 주세요";
+      } else { location.replace(next); }
+    } catch (ex) { show(ex.message); }
+    function show(m) { err.textContent = m; err.classList.remove("hidden"); $("submitBtn").disabled = false; $("submitBtn").textContent = "가입하기"; return false; }
+  });
+  $("email").focus();
+})();
+</script>
+</body>
+</html>

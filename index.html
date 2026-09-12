@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>카페인 매니저 — 내 섭취 기록</title>
+<meta name="description" content="음료를 검색하고 1회 제공량 기준 카페인·당류·칼로리를 확인한 뒤 바로 기록하세요.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%231F6F5B'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="brand__dot"></span>
+      <strong class="brand__name">카페인 매니저</strong>
+      <small class="brand__sub">내 섭취 기록</small>
+    </a>
+    <div class="topbar__right" id="topbarUser"></div>
+  </header>
+
+  <main class="main">
+    <!-- 히어로: 음료 찾기 -->
+    <section class="hero">
+      <p class="eyebrow">음료 찾기</p>
+      <h1>오늘 어떤 음료를 마셨나요?</h1>
+      <p class="hero__lead">정확한 상품명을 검색하고 1회 제공량 기준 영양정보를 확인한 뒤 바로 기록하세요.</p>
+      <form class="search" id="searchForm" role="search">
+        <label class="search__field">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6B7380" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+          <input type="search" id="searchInput" placeholder="상품명 또는 브랜드 검색" autocomplete="off" aria-label="상품명 또는 브랜드 검색">
+        </label>
+        <button type="submit" class="btn-primary">검색</button>
+      </form>
+      <div class="quick" id="quickChips">
+        <span class="quick__label">빠른 검색</span>
+        <button type="button" class="quick__chip" data-q="아메리카노">아메리카노</button>
+        <button type="button" class="quick__chip" data-q="콜드 브루">콜드 브루</button>
+        <button type="button" class="quick__chip" data-q="라떼">라떼</button>
+        <button type="button" class="quick__chip" data-q="티">티</button>
+        <button type="button" class="quick__chip" data-q="몬스터">몬스터</button>
+        <button type="button" class="quick__chip" data-q="박카스">박카스</button>
+      </div>
+      <div class="hero__note">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 10v6M12 7h.01"></path></svg>
+        <span>제품·사이즈·레시피에 따라 수치가 달라질 수 있어 출처와 확인일을 함께 표시합니다.</span>
+      </div>
+    </section>
+
+    <!-- 지표 4열 -->
+    <section class="metrics" aria-label="오늘의 지표">
+      <article class="metric metric--today">
+        <div class="metric__head">
+          <div><p class="metric__date" id="todayDate">—</p><h2 class="metric__title">오늘의 섭취</h2></div>
+          <span class="metric__count"><strong id="todayCount">0</strong>회</span>
+        </div>
+        <div class="metric__big">
+          <span><strong id="todayCaffeine">0</strong>mg</span>
+          <small id="todayGoal">목표 400 mg · 0%</small>
+        </div>
+        <div class="bar" id="todayBar"><span></span></div>
+        <p class="metric__copy" id="todayCopy">목표까지 400 mg 남았습니다.</p>
+      </article>
+      <article class="metric metric--sugar">
+        <p class="metric__label">당류</p>
+        <p class="metric__value"><strong id="todaySugar">0</strong>g</p>
+        <p class="metric__sub" id="todaySugarSub">0회 합계 · 1회 제공량 기준</p>
+      </article>
+      <article class="metric metric--kcal">
+        <p class="metric__label">칼로리</p>
+        <p class="metric__value"><strong id="todayKcal">0</strong>kcal</p>
+        <p class="metric__sub" id="todayKcalSub">0회 합계 · 1회 제공량 기준</p>
+      </article>
+      <article class="metric metric--spend">
+        <p class="metric__label">실제 지출</p>
+        <p class="metric__value"><strong id="todaySpend">0</strong>원</p>
+        <p class="metric__sub" id="todaySpendSub">0회 결제 · 내가 입력한 금액만</p>
+      </article>
+    </section>
+
+    <div class="columns">
+      <!-- 상품 카탈로그 -->
+      <section class="card catalog" aria-labelledby="catalogTitle">
+        <div class="card__head">
+          <div>
+            <p class="card__kicker">상품 카탈로그</p>
+            <h2 class="card__title" id="catalogTitle">검색 결과</h2>
+            <p class="card__meta" id="catalogMeta">불러오는 중…</p>
+          </div>
+          <button type="button" class="btn-outline" id="addProductBtn">＋ 직접 추가</button>
+        </div>
+        <div class="toolbar">
+          <div class="filters" id="filters">
+            <button type="button" class="filter filter--all is-active" data-cat="all">전체</button>
+            <button type="button" class="filter cat-coffee" data-cat="coffee">커피</button>
+            <button type="button" class="filter cat-blended" data-cat="blended">블렌디드</button>
+            <button type="button" class="filter cat-tea" data-cat="tea">티</button>
+            <button type="button" class="filter cat-refresher" data-cat="refresher">리프레셔</button>
+            <button type="button" class="filter cat-energy" data-cat="energy">에너지음료</button>
+            <button type="button" class="filter cat-other" data-cat="other">기타</button>
+          </div>
+          <label class="sort">정렬
+            <select class="select" id="sortSelect">
+              <option value="relevance">관련도순</option>
+              <option value="caffeine-desc">카페인 높은순</option>
+              <option value="caffeine-asc">카페인 낮은순</option>
+              <option value="kcal-asc">칼로리 낮은순</option>
+              <option value="name">이름순</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="productGrid" class="products" aria-live="polite"></div>
+        <button type="button" class="btn-more hidden" id="moreBtn">결과 더 보기</button>
+
+        <div class="empty hidden" id="emptyState">
+          <span class="empty__icon">?</span>
+          <h3>일치하는 음료가 없습니다</h3>
+          <p>띄어쓰기를 바꿔 검색하거나, 제품 라벨을 보고 직접 추가해 주세요.</p>
+          <button type="button" class="btn-green" id="addProductBtn2">직접 추가하기</button>
+        </div>
+      </section>
+
+      <!-- 최근 기록 -->
+      <section class="card history" aria-labelledby="historyTitle">
+        <div>
+          <p class="card__kicker">최근 기록</p>
+          <h2 class="card__title" id="historyTitle">섭취 내역</h2>
+        </div>
+        <div class="segment" id="rangeSegment">
+          <button type="button" class="is-active" data-range="today">오늘</button>
+          <button type="button" data-range="7d">7일</button>
+          <button type="button" data-range="all">전체</button>
+        </div>
+        <p class="history__summary" id="historySummary">0회 · 카페인 0 mg · 0원</p>
+        <div class="history__list" id="historyList"></div>
+        <div class="note" id="residualNote">체내 잔존 카페인 약 0 mg · 자정 무렵 약 0 mg (반감기 5시간 기준 추정)</div>
+      </section>
+    </div>
+
+    <section class="card principle">
+      <span class="principle__icon">i</span>
+      <div>
+        <h2>정확한 숫자를 위한 표시 원칙</h2>
+        <p>영양정보는 출처와 기준 용량을 함께 저장합니다. 가격은 고정 영양정보가 아니므로 기준가인지, 온라인 최저가인지, 내가 실제로 결제한 금액인지 구분합니다. 표시가 없는 값은 임의로 추정하지 않습니다.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>카페인 수치는 개인별 민감도와 제조 편차가 있습니다. 이 서비스는 의료 진단을 대신하지 않습니다.</p>
+    <a href="#" id="sourcesLink">데이터 출처 보기</a>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/seed-products.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

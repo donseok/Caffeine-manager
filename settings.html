@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>설정 — 카페인 매니저</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="popup-page">
+<div class="popup">
+  <div class="popup__head">
+    <div><p class="popup__kicker">설정</p><h2 class="popup__title">내 계정</h2></div>
+    <button type="button" class="popup__close" aria-label="닫기" data-close>×</button>
+  </div>
+
+  <form id="form" novalidate style="margin-top:20px">
+    <div class="form-grid">
+      <label class="field span-2"><span class="field__label">이메일</span><input type="email" id="email" disabled></label>
+      <label class="field"><span class="field__label">표시 이름</span><input type="text" id="displayName" maxlength="30" required></label>
+      <label class="field"><span class="field__label">하루 카페인 목표 <em>(mg)</em></span><input type="number" id="dailyLimit" min="50" max="1500" step="10" inputmode="numeric" required><small class="field__hint">성인 권고 최대치 400 mg · 임산부 300 mg 이하</small></label>
+    </div>
+    <div class="form-error hidden" id="error"></div>
+    <div class="form-ok hidden" id="ok">저장했습니다.</div>
+    <div class="note" id="modeNote" style="margin-top:16px"></div>
+    <div class="popup__actions" style="justify-content:space-between">
+      <button type="button" class="btn-danger" id="logoutBtn">로그아웃</button>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn-ghost" data-close>닫기</button>
+        <button type="submit" class="btn-green" id="saveBtn">저장</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/seed-products.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+(async function () {
+  const CM = window.CM, ui = CM.ui, $ = (id) => document.getElementById(id);
+  ui.popupPage.bindClose(); ui.popupPage.autosize();
+  const user = await CM.auth.requireUser();
+  $("email").value = user.email; $("displayName").value = user.displayName; $("dailyLimit").value = user.dailyLimit;
+  $("modeNote").innerHTML = CM.mode === "supabase"
+    ? `저장 위치: <b>클라우드(Supabase)</b> — 어느 기기에서 로그인해도 같은 기록을 봅니다.${user.role === "admin" ? " · 이 계정은 <b>슈퍼관리자</b>입니다." : ""}`
+    : `저장 위치: <b>이 브라우저(로컬 모드)</b> — js/config.js 에 Supabase 키를 넣으면 클라우드 저장으로 바뀝니다.${user.role === "admin" ? " · 이 계정은 <b>슈퍼관리자</b>입니다." : ""}`;
+  $("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("error"), ok = $("ok"); err.classList.add("hidden"); ok.classList.add("hidden");
+    const displayName = $("displayName").value.trim(), dailyLimit = Number($("dailyLimit").value);
+    if (!displayName) { err.textContent = "표시 이름을 입력해 주세요."; err.classList.remove("hidden"); return; }
+    if (!(dailyLimit >= 50 && dailyLimit <= 1500)) { err.textContent = "하루 목표는 50~1500 mg 사이로 입력해 주세요."; err.classList.remove("hidden"); return; }
+    $("saveBtn").disabled = true;
+    try { const u = await CM.auth.updateProfile({ displayName, dailyLimit }); ok.classList.remove("hidden"); ui.popupPage.send({ type: "profile:updated", user: u }); }
+    catch (ex) { err.textContent = "저장 실패: " + ex.message; err.classList.remove("hidden"); }
+    $("saveBtn").disabled = false;
+  });
+  $("logoutBtn").addEventListener("click", async () => {
+    if (!confirm("로그아웃할까요?")) return;
+    await CM.auth.signOut();
+    if (ui.popupPage.inFrame()) ui.popupPage.send({ type: "signed-out" }); else location.href = "login.html";
+  });
+})();
+</script>
+</body>
+</html>

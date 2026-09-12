@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>상품 직접 추가 — 카페인 매니저</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="popup-page">
+<div class="popup">
+  <div class="popup__head">
+    <div><p class="popup__kicker">상품 카탈로그</p><h2 class="popup__title" id="title">상품 직접 추가</h2></div>
+    <button type="button" class="popup__close" aria-label="닫기" data-close>×</button>
+  </div>
+  <p style="margin:12px 0 18px;font-size:13px;color:#6B7380" id="lead">제품 라벨이나 브랜드 공식 영양정보를 보고 <b>1회 제공량 기준</b>으로 입력해 주세요. 모르는 값은 비워 두세요 — 임의로 추정하지 않습니다.</p>
+
+  <form id="form" novalidate>
+    <div class="form-grid">
+      <label class="field"><span class="field__label">브랜드</span><input type="text" id="brand" placeholder="예: 이디야" required maxlength="40"></label>
+      <label class="field"><span class="field__label">분류</span>
+        <select id="category" class="select" style="width:100%;height:44px">
+          <option value="coffee">커피</option><option value="tea">티</option><option value="blended">블렌디드</option>
+          <option value="refresher">리프레셔</option><option value="energy">에너지음료</option><option value="other">기타</option>
+        </select>
+      </label>
+      <label class="field span-2"><span class="field__label">상품명</span><input type="text" id="name" placeholder="예: 아이스 아메리카노 (L)" required maxlength="80"></label>
+      <label class="field"><span class="field__label">1회 제공량 표기</span><input type="text" id="serving_label" placeholder="예: 1잔 473 mL" maxlength="40"></label>
+      <label class="field"><span class="field__label">용량 <em>(mL, 선택)</em></span><input type="number" id="serving_ml" min="0" step="1" inputmode="numeric" placeholder="473"></label>
+      <label class="field"><span class="field__label">카페인 <em>(mg)</em></span><input type="number" id="caffeine_mg" min="0" step="0.5" inputmode="decimal" required placeholder="예: 150"></label>
+      <label class="field"><span class="field__label">당류 <em>(g, 선택)</em></span><input type="number" id="sugar_g" min="0" step="0.1" inputmode="decimal" placeholder="예: 0"></label>
+      <label class="field"><span class="field__label">칼로리 <em>(kcal, 선택)</em></span><input type="number" id="kcal" min="0" step="1" inputmode="numeric" placeholder="예: 10"></label>
+      <label class="field"><span class="field__label">기준가 <em>(원, 선택)</em></span><input type="number" id="base_price" min="0" step="10" inputmode="numeric" placeholder="예: 3200"></label>
+      <label class="field span-2"><span class="field__label">출처</span><input type="text" id="source" placeholder="예: 제품 라벨 · 브랜드 홈페이지 영양정보" maxlength="80" value="제품 라벨"><small class="field__hint">어디서 확인한 수치인지 남겨 두면 나중에 검증하기 쉽습니다.</small></label>
+    </div>
+    <div class="form-error hidden" id="error"></div>
+    <div class="note" id="pendingNote" style="margin-top:16px">관리자 승인 전까지는 <b>내게만</b> 보이는 상품으로 저장됩니다. 바로 기록할 수 있습니다.</div>
+    <div class="popup__actions">
+      <button type="button" class="btn-ghost" data-close>취소</button>
+      <button type="submit" class="btn-ghost" id="saveOnly">저장</button>
+      <button type="submit" class="btn-green" id="saveAndRecord">저장하고 기록</button>
+    </div>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/seed-products.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+(async function () {
+  const CM = window.CM, ui = CM.ui, store = CM.store, $ = (id) => document.getElementById(id);
+  ui.popupPage.bindClose(); ui.popupPage.autosize();
+  const user = await CM.auth.requireUser();
+  if (user.role === "admin") { $("pendingNote").textContent = "관리자 계정이므로 바로 승인된 상품으로 등록됩니다."; }
+  let recordAfter = false;
+  $("saveOnly").addEventListener("click", () => { recordAfter = false; });
+  $("saveAndRecord").addEventListener("click", () => { recordAfter = true; });
+  $("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("error"); err.classList.add("hidden");
+    const data = {};
+    ["brand", "category", "name", "serving_label", "serving_ml", "caffeine_mg", "sugar_g", "kcal", "base_price", "source"].forEach((k) => { data[k] = $(k).value; });
+    if (!data.brand.trim()) return show("브랜드를 입력해 주세요.");
+    if (!data.name.trim()) return show("상품명을 입력해 주세요.");
+    if (data.caffeine_mg === "" || !(Number(data.caffeine_mg) >= 0)) return show("카페인(mg)을 입력해 주세요. 라벨에 없다면 0이 아니라 브랜드에 확인해 주세요.");
+    if (Number(data.caffeine_mg) > 1500) return show("카페인 값이 너무 큽니다. 1회 제공량 기준인지 확인해 주세요.");
+    if (data.base_price !== "") data.price_note = "직접 입력 기준가";
+    $("saveAndRecord").disabled = $("saveOnly").disabled = true;
+    try {
+      const product = await store.createProduct(data);
+      if (ui.popupPage.inFrame()) ui.popupPage.send({ type: "product:saved", product, record: recordAfter });
+      else location.href = "index.html";
+    } catch (ex) { show("저장 실패: " + ex.message); $("saveAndRecord").disabled = $("saveOnly").disabled = false; }
+    function show(m) { err.textContent = m; err.classList.remove("hidden"); return false; }
+  });
+  $("brand").focus();
+})();
+</script>
+</body>
+</html>
