@@ -29,7 +29,7 @@
   // 브랜드 배지 — assets/brands/ 의 브랜드별 이미지.
   //   png = 사용자가 넣은 제품/로고 사진(사진처럼 꽉 채워 표시) · svg = 직접 그린 오리지널 아이콘(엠블럼처럼 작게 표시)
   // 상품에는 brand_key 가 있지만, 섭취 기록에는 brand(표시명)만 저장되므로 이름으로도 찾는다.
-  const BRAND_BADGES = { starbucks: "starbucks.png", redbull: "redbull.png", bacchus: "bacchus.png", monster: "monster.svg", cocacola: "cocacola.svg", lotte: "lotte.svg" };
+  const BRAND_BADGES = { starbucks: "starbucks.png", redbull: "redbull.png", bacchus: "bacchus.png", monster: "monster.webp", cocacola: "cocacola.svg", lotte: "lotte.jpg" };
   const BRAND_KEY_BY_NAME = { "스타벅스": "starbucks", "레드불": "redbull", "몬스터": "monster", "코카콜라": "cocacola", "동아제약": "bacchus", "박카스": "bacchus", "롯데칠성": "lotte" };
   ui.brandBadgeSrc = (p) => {
     if (!p) return null;
