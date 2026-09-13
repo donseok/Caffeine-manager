@@ -294,7 +294,8 @@ h1, h2, h3, p, dl, dd, dt { margin: 0; }
 .principle h2 { margin: 2px 0 4px; font-size: 14px; font-weight: 600; }
 .principle p { font-size: 13px; color: var(--muted); }
 
-.footer { display: flex; justify-content: space-between; gap: 20px; padding: 0 40px 32px; font-size: 12px; color: var(--muted); }
+.footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px; padding: 0 40px 32px; font-size: 12px; color: var(--muted); }
+.footer__copyright { width: 100%; text-align: center; margin-top: 4px; }
 .footer a { color: var(--ink-2); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 
 /* --------------------------------------------------------------------------
