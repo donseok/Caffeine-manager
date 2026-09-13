@@ -24,6 +24,12 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # 브라우저가 이전 js/css 를 캐시한 채로 새 페이지를 여는 문제 방지 —
+      # 커밋마다 ?v=<sha> 가 바뀌므로 배포 직후부터 항상 최신 자원을 받는다.
+      - name: 정적 자원 캐시 무효화
+        run: |
+          V="${GITHUB_SHA:0:8}"
+          sed -i -E "s#(href|src)=\"(css|js)/([^\"?]+)\"#\1=\"\2/\3?v=$V\"#g" *.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
