@@ -81,7 +81,7 @@
       : `<span class="badge badge--check" title="${ui.esc(p.source || "출처 미상")} · 아직 재확인하지 않은 수치">확인 필요</span>`;
     const badgeSrc = ui.brandBadgeSrc(p);
     const img = p.image_url ? `<img src="${ui.esc(p.image_url)}" alt="${ui.esc(p.brand)}">`
-      : badgeSrc ? `<img class="product__badge" src="${ui.esc(badgeSrc)}" alt="${ui.esc(p.brand)}">`
+      : badgeSrc ? `<img class="${ui.isBrandPhoto(badgeSrc) ? "product__photo" : "product__badge"}" src="${ui.esc(badgeSrc)}" alt="${ui.esc(p.brand)}">`
       : `<span class="product__initial">${ui.esc(ui.initial(p))}</span>`;
     return `<article class="product cat-${ui.esc(p.category)}" data-id="${ui.esc(p.id)}">
       <div class="product__img">${img}${badge}</div>
@@ -145,7 +145,7 @@
     const q = Number(x.quantity) || 1, qText = q === 1 ? "1회" : `${ui.fmtNum(q, 2)}회`;
     const when = state.range === "today" ? ui.fmtTime(x.consumed_at) : ui.fmtDateTimeKo(x.consumed_at);
     return `<div class="entry cat-${ui.esc(x.category || "other")}" data-id="${ui.esc(x.id)}">
-      <div class="entry__thumb">${(() => { const s = ui.brandBadgeSrc(x); return s ? `<img src="${ui.esc(s)}" alt="">` : ui.esc(ui.initial(x.brand ? { brand: x.brand } : { name: x.product_name })); })()}</div>
+      <div class="entry__thumb">${(() => { const s = ui.brandBadgeSrc(x); return s ? `<img${ui.isBrandPhoto(s) ? ' class="entry__thumb-photo"' : ""} src="${ui.esc(s)}" alt="">` : ui.esc(ui.initial(x.brand ? { brand: x.brand } : { name: x.product_name })); })()}</div>
       <div style="min-width:0"><strong class="entry__name" title="${ui.esc(x.product_name)}">${ui.esc(x.product_name)}</strong><span class="entry__meta">${when} · ${qText}${x.serving_ml ? ` · ${ui.fmtInt(x.serving_ml * q)} mL` : ""}</span></div>
       <div class="entry__right"><strong class="entry__caffeine">${ui.fmtMg((Number(x.caffeine_mg) || 0) * q)}</strong><span class="entry__price">${x.price_paid != null ? ui.fmtWon(x.price_paid * q) : "가격 미입력"}</span></div>
       <button type="button" class="entry__delete" title="기록 삭제" data-delete="${ui.esc(x.id)}">×</button>

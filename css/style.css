@@ -220,6 +220,7 @@ h1, h2, h3, p, dl, dd, dt { margin: 0; }
 .product__initial { font-size: 26px; font-weight: 700; letter-spacing: -.02em; opacity: .9; }
 .product__img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .product__img .product__badge { position: static; width: 56px; height: 56px; }
+.product__img .product__photo { background: #fff; }
 .badge {
   position: absolute; left: 6px; bottom: 6px; padding: 2px 6px; border-radius: 4px;
   background: rgba(255, 255, 255, .92); font-size: 10px; font-weight: 600; color: var(--ink-2);
@@ -272,6 +273,7 @@ h1, h2, h3, p, dl, dd, dt { margin: 0; }
 .entry { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); position: relative; }
 .entry__thumb { width: 40px; height: 48px; border-radius: 8px; display: grid; place-items: center; font-size: 13px; font-weight: 600; background: var(--tint); color: var(--cat); }
 .entry__thumb img { width: 28px; height: 28px; }
+.entry__thumb img.entry__thumb-photo { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; background: #fff; }
 .entry__name { display: block; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .entry__meta { display: block; margin-top: 2px; font-size: 11.5px; color: var(--muted); }
 .entry__right { text-align: right; }
