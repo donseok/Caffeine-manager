@@ -26,6 +26,15 @@
   ui.toLocalInput = (d) => { d = d ? new Date(d) : new Date(); return `${d.getFullYear()}-${ui.pad2(d.getMonth() + 1)}-${ui.pad2(d.getDate())}T${ui.pad2(d.getHours())}:${ui.pad2(d.getMinutes())}`; };
   ui.isSameDay = (a, b) => { a = new Date(a); b = b ? new Date(b) : new Date(); return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); };
   ui.initial = (p) => { const s = String(p.brand || p.name || "?").trim(); const ch = s[0] || "?"; return /[A-Za-z]/.test(ch) ? ch.toUpperCase() : ch; };
+  // 브랜드 배지 — assets/brands/ 의 직접 그린 오리지널 아이콘(실제 상표 로고 아님).
+  // 상품에는 brand_key 가 있지만, 섭취 기록에는 brand(표시명)만 저장되므로 이름으로도 찾는다.
+  const BRAND_BADGES = { starbucks: 1, redbull: 1, monster: 1, cocacola: 1, bacchus: 1, lotte: 1 };
+  const BRAND_KEY_BY_NAME = { "스타벅스": "starbucks", "레드불": "redbull", "몬스터": "monster", "코카콜라": "cocacola", "동아제약": "bacchus", "박카스": "bacchus", "롯데칠성": "lotte" };
+  ui.brandBadgeSrc = (p) => {
+    if (!p) return null;
+    const key = BRAND_BADGES[p.brand_key] ? p.brand_key : BRAND_KEY_BY_NAME[String(p.brand || "").trim()];
+    return key ? "assets/brands/" + key + ".svg" : null;
+  };
   ui.catInfo = (key) => CM.CATEGORIES[key] || CM.CATEGORIES.other;
   ui.qs = (k) => new URLSearchParams(location.search).get(k);
 

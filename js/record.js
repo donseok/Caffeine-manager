@@ -18,7 +18,10 @@
   const cat = ui.catInfo(product.category);
   document.getElementById("productBox").classList.add("cat-" + product.category);
   $("title").textContent = product.name;
-  $("thumb").innerHTML = product.image_url ? `<img src="${ui.esc(product.image_url)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">` : ui.esc(ui.initial(product));
+  const badgeSrc = ui.brandBadgeSrc(product);
+  $("thumb").innerHTML = product.image_url ? `<img src="${ui.esc(product.image_url)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">`
+    : badgeSrc ? `<img src="${ui.esc(badgeSrc)}" alt="" style="width:44px;height:44px">`
+    : ui.esc(ui.initial(product));
   $("productLine").innerHTML = `${ui.esc(product.brand)} · <b>${cat.label}</b> · ${ui.esc(product.serving_label)}`;
   $("nutritionLine").textContent = `카페인 ${ui.fmtMg(product.caffeine_mg)} · 당류 ${ui.fmtG(product.sugar_g)} · ${ui.fmtKcal(product.kcal)}`;
 

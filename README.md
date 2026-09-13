@@ -15,6 +15,7 @@ js/config.js      ★ Supabase 키 · 관리자 이메일 설정
 js/*.js           auth(인증) · store(데이터) · ui(공통) · app · record · admin
 supabase/         schema.sql(테이블·RLS·트리거) · seed.sql(시드 상품 35종)
 data/ · tools/    시드 원본 JSON 과 생성기
+assets/brands/    브랜드 배지 SVG — 직접 그린 오리지널 아이콘 (브랜드 색상만 참고, 실제 상표 로고 아님)
 docs/             PLAN.md(계획) · REVIEW.md(배포 전 검토)
 ```
 
