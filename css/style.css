@@ -276,7 +276,9 @@ h1, h2, h3, p, dl, dd, dt { margin: 0; }
 .entry__caffeine { display: block; font-size: 14px; font-weight: 600; color: var(--cat); }
 .entry__price { display: block; font-size: 11px; color: var(--muted); }
 .entry__delete { position: absolute; right: 0; top: 6px; width: 22px; height: 22px; border: 0; border-radius: 6px; background: transparent; color: var(--line-2); font-size: 16px; line-height: 1; display: none; padding: 0; }
-.entry:hover .entry__delete { display: grid; place-items: center; }
+.entry:hover .entry__delete, .entry__delete:focus-visible { display: grid; place-items: center; }
+/* 마우스 hover 가 없는 기기(터치)에서는 항상 보이게 */
+@media (hover: none) { .entry__delete { display: grid; place-items: center; } }
 .entry__delete:hover { background: #FDECEA; color: var(--danger); }
 .history__empty { padding: 28px 0 20px; text-align: center; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); margin-top: 6px; }
 .note { margin-top: 8px; padding: 12px 14px; border-radius: 10px; background: var(--green-tint); color: var(--green-dark); font-size: 12.5px; }

@@ -1,5 +1,5 @@
 // 자동 생성 파일 — data/products.seed.json 을 고친 뒤 `python3 tools/gen-seed.py` 로 다시 만드세요.
-// 생성일: 2026-09-12
+// 생성일: 2026-09-13
 window.CM = window.CM || {};
 window.CM.SEED_PRODUCTS = [
  {

@@ -57,7 +57,8 @@
     e.preventDefault();
     const err = $("error"); err.classList.add("hidden");
     const q = Number($("quantity").value);
-    if (!(q > 0 && q <= 20)) { err.textContent = "마신 횟수는 0보다 크고 20 이하여야 합니다."; err.classList.remove("hidden"); return; }
+    // 저장 단계에서 0.1 로 올림되므로(store.makeIntakeRow) 여기서도 같은 하한을 쓴다 — 요약과 저장값이 달라지지 않도록.
+    if (!(q >= 0.1 && q <= 20)) { err.textContent = "마신 횟수는 0.1 이상 20 이하로 입력해 주세요."; err.classList.remove("hidden"); return; }
     const when = $("consumedAt").value ? new Date($("consumedAt").value) : null;
     if (!when || isNaN(when.getTime())) { err.textContent = "마신 날짜와 시간을 확인해 주세요."; err.classList.remove("hidden"); return; }
     if (when.getTime() > Date.now() + 10 * 60e3) { err.textContent = "미래 시각은 기록할 수 없습니다."; err.classList.remove("hidden"); return; }

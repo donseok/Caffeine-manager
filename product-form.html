@@ -67,6 +67,7 @@
     if (!data.name.trim()) return show("상품명을 입력해 주세요.");
     if (data.caffeine_mg === "" || !(Number(data.caffeine_mg) >= 0)) return show("카페인(mg)을 입력해 주세요. 라벨에 없다면 0이 아니라 브랜드에 확인해 주세요.");
     if (Number(data.caffeine_mg) > 1500) return show("카페인 값이 너무 큽니다. 1회 제공량 기준인지 확인해 주세요.");
+    if (data.base_price !== "" && !(Number(data.base_price) >= 0 && Number(data.base_price) < 1e7)) return show("기준가를 확인해 주세요. (0 이상 1000만원 미만)");
     if (data.base_price !== "") data.price_note = "직접 입력 기준가";
     $("saveAndRecord").disabled = $("saveOnly").disabled = true;
     try {

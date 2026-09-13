@@ -20,6 +20,8 @@
   ui.fmtDateShort = (iso) => { const d = new Date(iso); return ui.pad2(d.getMonth() + 1) + "-" + ui.pad2(d.getDate()); };
   ui.fmtDateKo = (d) => { d = d ? new Date(d) : new Date(); const days = ["일", "월", "화", "수", "목", "금", "토"]; return `${d.getMonth() + 1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`; };
   ui.fmtDateTimeKo = (iso) => { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()} ${ui.fmtTime(iso)}`; };
+  /** date 입력/저장용 "YYYY-MM-DD" (로컬 시간 기준) */
+  ui.toLocalDate = (d) => { d = d ? new Date(d) : new Date(); return `${d.getFullYear()}-${ui.pad2(d.getMonth() + 1)}-${ui.pad2(d.getDate())}`; };
   /** datetime-local 입력용 "YYYY-MM-DDTHH:MM" (로컬 시간) */
   ui.toLocalInput = (d) => { d = d ? new Date(d) : new Date(); return `${d.getFullYear()}-${ui.pad2(d.getMonth() + 1)}-${ui.pad2(d.getDate())}T${ui.pad2(d.getHours())}:${ui.pad2(d.getMinutes())}`; };
   ui.isSameDay = (a, b) => { a = new Date(a); b = b ? new Date(b) : new Date(); return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); };
@@ -38,6 +40,8 @@
   // ---------- 팝업 호스트 (부모 페이지) ----------
   // ui.openPopup('record.html?product=...', { onMessage(msg) }) → { close() }
   let currentPopup = null;
+  // file:// 로 열면 origin 이 "null" 이라 고정할 수 없다. http(s) 로 서비스할 때만 고정한다.
+  const POPUP_ORIGIN = (location.origin && location.origin !== "null") ? location.origin : "*";
   ui.openPopup = (url, opts) => {
     opts = opts || {};
     ui.closePopup();
@@ -47,8 +51,18 @@
     if (opts.height) frame.style.height = opts.height + "px";
     host.appendChild(frame); document.body.appendChild(host); document.body.classList.add("popup-open");
     const onMsg = (e) => {
+      // 같은 출처의 이 팝업 iframe 이 보낸 메시지만 받는다.
+      if (POPUP_ORIGIN !== "*" && e.origin !== POPUP_ORIGIN) return;
+      if (frame && e.source !== frame.contentWindow) return;
       const d = e.data; if (!d || d.__cm !== "popup") return;
       if (d.type === "resize" && frame) { const h = Math.max(200, Math.min(Number(d.height) || 0, window.innerHeight - 48)); frame.style.height = h + "px"; return; }
+      if (d.type === "auth-required") {
+        // 팝업 안에서 세션이 끊긴 경우: 좁은 iframe 에 로그인 화면을 그리지 않고 부모를 통째로 옮긴다.
+        ui.closePopup();
+        const here = (location.pathname.split("/").pop() || "index.html") + location.search;
+        location.replace("login.html?next=" + encodeURIComponent(here) + (d.reason ? "&" + d.reason : ""));
+        return;
+      }
       if (d.type === "close") { ui.closePopup(); }
       if (opts.onMessage) opts.onMessage(d);
     };
@@ -63,7 +77,7 @@
   // ---------- 팝업 페이지 도우미 (record.html 등 iframe 안에서 실행) ----------
   ui.popupPage = {
     inFrame() { try { return window.parent && window.parent !== window; } catch (e) { return false; } },
-    send(msg) { if (ui.popupPage.inFrame()) window.parent.postMessage({ __cm: "popup", ...msg }, "*"); },
+    send(msg) { if (ui.popupPage.inFrame()) window.parent.postMessage({ __cm: "popup", ...msg }, POPUP_ORIGIN); },
     close(reason) {
       if (ui.popupPage.inFrame()) ui.popupPage.send({ type: "close", reason: reason || "cancel" });
       else if (window.opener) window.close();

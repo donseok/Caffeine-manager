@@ -11,8 +11,8 @@
   $("modeMeta").textContent = CM.mode === "supabase" ? "클라우드 모드 · Supabase" : "로컬 모드 · 이 브라우저의 데이터만 관리합니다";
   if (CM.mode === "local") $("reseedBtn").classList.remove("hidden");
 
+  bind(); // 데이터보다 먼저 (로딩 중 입력이 그냥 먹히는 것을 막기 위해)
   await reloadAll();
-  bind();
 
   // ---------- 데이터 ----------
   async function reloadAll() {
@@ -51,8 +51,11 @@
 
   // ---------- 상품 ----------
   function productMatches(p) {
-    const q = state.q.trim().toLowerCase().replace(/\s+/g, "");
-    if (q && !(p.name + p.brand).toLowerCase().replace(/\s+/g, "").includes(q)) return false;
+    // 예전엔 (상품명+브랜드) 순서로만 이어 붙여서 "스타벅스 아메리카노" 처럼 화면에 보이는 순서로 치면 0건이 나왔다.
+    // 이제 토큰마다 브랜드·상품명·태그 어디에든 있으면 통과.
+    const hay = (p.brand + " " + p.name + " " + (p.tags || []).join(" ")).toLowerCase().replace(/\s+/g, "");
+    const tokens = state.q.trim().toLowerCase().split(/\s+/).filter(Boolean).map((t) => t.replace(/\s+/g, ""));
+    if (tokens.length && !tokens.every((t) => hay.includes(t))) return false;
     if (state.cat !== "all" && p.category !== state.cat) return false;
     if (state.status !== "all" && p.status !== state.status) return false;
     if (state.unverified && p.verified_at) return false;
@@ -87,6 +90,7 @@
     const err = $("f_error"); err.classList.add("hidden");
     if (!data.brand.trim() || !data.name.trim()) { err.textContent = "브랜드와 상품명은 필수입니다."; err.classList.remove("hidden"); return; }
     if (data.caffeine_mg === "" || !(Number(data.caffeine_mg) >= 0)) { err.textContent = "카페인(mg)을 입력해 주세요."; err.classList.remove("hidden"); return; }
+    if (data.base_price !== "" && !(Number(data.base_price) >= 0 && Number(data.base_price) < 1e7)) { err.textContent = "기준가를 확인해 주세요. (0 이상 1000만원 미만)"; err.classList.remove("hidden"); return; }
     $("saveProductBtn").disabled = true;
     try {
       const norm = store.normalizeProduct(data); norm.status = g("status");
@@ -100,7 +104,8 @@
     const p = state.products.find((x) => x.id === id); if (!p) return;
     try {
       if (act === "edit") return openForm(p);
-      if (act === "verify") { await store.updateProduct(id, { verified_at: new Date().toISOString().slice(0, 10) }); ui.toast(`${p.name} · 확인일 갱신`, "ok"); }
+      // toISOString().slice(0,10) 은 UTC 라 한국 오전 9시 이전에 누르면 하루 전 날짜가 찍혔다.
+      if (act === "verify") { await store.updateProduct(id, { verified_at: ui.toLocalDate() }); ui.toast(`${p.name} · 확인일 갱신`, "ok"); }
       if (act === "delete") { if (!confirm(`‘${p.name}’ 을(를) 삭제할까요? 기존 기록은 스냅샷으로 남습니다.`)) return; await store.deleteProduct(id); ui.toast("삭제했습니다."); }
       if (act === "approve") { await store.updateProduct(id, { status: "approved" }); ui.toast(`${p.name} · 승인`, "ok"); }
       if (act === "reject") { await store.updateProduct(id, { status: "rejected" }); ui.toast(`${p.name} · 반려`); }

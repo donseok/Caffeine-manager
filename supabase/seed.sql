@@ -1,5 +1,7 @@
 -- 자동 생성 파일 — data/products.seed.json 을 고친 뒤 `python3 tools/gen-seed.py` 로 다시 만드세요.
 -- schema.sql 을 먼저 실행한 뒤 이 파일을 실행하세요. 여러 번 실행해도 안전합니다(upsert).
+-- 재실행하면 영양정보·가격·상태(status)·출처는 시드 값으로 되돌아가지만,
+-- 관리자가 눌러 둔 확인일(verified_at, price_checked_at) 은 그대로 둡니다.
 insert into public.products
   (id, slug, brand, brand_key, name, category, serving_label, serving_ml, caffeine_mg, sugar_g, kcal, base_price, price_note, price_checked_at, source, verified_at, tags, status)
 values
@@ -43,4 +45,5 @@ on conflict (id) do update set
   category = excluded.category, serving_label = excluded.serving_label, serving_ml = excluded.serving_ml,
   caffeine_mg = excluded.caffeine_mg, sugar_g = excluded.sugar_g, kcal = excluded.kcal,
   base_price = excluded.base_price, price_note = excluded.price_note, tags = excluded.tags,
+  status = excluded.status, source = excluded.source,
   updated_at = now();

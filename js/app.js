@@ -5,9 +5,10 @@
   const CM = window.CM, ui = CM.ui, store = CM.store, CFG = window.APP_CONFIG || {};
   const $ = (id) => document.getElementById(id);
 
+  const HISTORY_PAGE = 50; // 내역 한 번에 보여줄 건수
   const state = {
     products: [], intakes: [], prices: {},
-    query: "", category: "all", sort: "relevance", page: 1, range: "today",
+    query: "", category: "all", sort: "relevance", page: 1, range: "today", historyPage: 1,
     user: null,
   };
 
@@ -17,9 +18,9 @@
   $("todayDate").textContent = ui.fmtDateKo();
   if (ui.qs("denied")) { ui.toast("관리자만 볼 수 있는 페이지입니다.", "error"); history.replaceState(null, "", "index.html"); }
 
+  bind(); // 데이터보다 먼저 묶는다 — 로딩 중 Enter 로 폼이 네이티브 제출되는 것을 막기 위해
   await Promise.all([loadProducts(), loadIntakes()]);
   renderAll();
-  bind();
 
   // ---------- 데이터 ----------
   async function loadProducts() {
@@ -150,7 +151,10 @@
   function renderHistory() {
     const list = rangeIntakes(), t = store.totals(list);
     $("historySummary").textContent = `${t.count}회 · 카페인 ${ui.fmtInt(t.caffeine)} mg · ${ui.fmtInt(t.spend)}원`;
-    $("historyList").innerHTML = list.length ? list.slice(0, state.range === "all" ? 50 : 100).map(entryRow).join("")
+    const shown = list.slice(0, state.historyPage * HISTORY_PAGE);
+    const rest = list.length - shown.length;
+    $("historyList").innerHTML = list.length
+      ? shown.map(entryRow).join("") + (rest > 0 ? `<button type="button" class="btn-more" id="historyMore">이전 기록 더 보기 (${ui.fmtInt(rest)}건 남음)</button>` : "")
       : `<div class="history__empty">${state.range === "today" ? "오늘은 아직 기록이 없습니다.<br>위에서 음료를 검색해 기록해 보세요." : "해당 기간의 기록이 없습니다."}</div>`;
     // 잔존 카페인 — 최근 2일 기록으로 추정
     const from = ts(store.dayRange(1).from), recent = state.intakes.filter((x) => ts(x.consumed_at) >= from);
@@ -197,8 +201,9 @@
     $("productGrid").addEventListener("click", (e) => { const b = e.target.closest("[data-record]"); if (b) openRecord(b.dataset.record); });
     $("addProductBtn").addEventListener("click", openProductForm);
     $("addProductBtn2").addEventListener("click", openProductForm);
-    $("rangeSegment").addEventListener("click", (e) => { const b = e.target.closest("[data-range]"); if (!b) return; state.range = b.dataset.range; document.querySelectorAll("#rangeSegment button").forEach((x) => x.classList.toggle("is-active", x === b)); renderHistory(); });
+    $("rangeSegment").addEventListener("click", (e) => { const b = e.target.closest("[data-range]"); if (!b) return; state.range = b.dataset.range; state.historyPage = 1; document.querySelectorAll("#rangeSegment button").forEach((x) => x.classList.toggle("is-active", x === b)); renderHistory(); });
     $("historyList").addEventListener("click", async (e) => {
+      if (e.target.closest("#historyMore")) { state.historyPage += 1; renderHistory(); return; }
       const b = e.target.closest("[data-delete]"); if (!b) return;
       if (!confirm("이 기록을 삭제할까요?")) return;
       try { await store.deleteIntake(b.dataset.delete); await loadIntakes(); renderAll(); ui.toast("삭제했습니다."); }
@@ -207,6 +212,15 @@
     $("sourcesLink").addEventListener("click", (e) => { e.preventDefault(); ui.toast("출처: 브랜드 공식 영양정보 · 제품 표시사항 · 사용자 직접 입력 — 각 상품 타일의 배지에서 출처와 확인일을 확인하세요."); });
     document.addEventListener("cm:profile", () => { state.user = CM.auth.getUser(); renderMetrics(); });
     // 다른 탭에서 기록/상품이 바뀐 경우(로컬 모드) 반영
-    window.addEventListener("storage", async (e) => { if (e.key === "cm:intakes" || e.key === "cm:products") { await Promise.all([loadProducts(), loadIntakes()]); renderAll(); } });
+    window.addEventListener("storage", async (e) => {
+      if (e.key === "cm:intakes" || e.key === "cm:products") { await Promise.all([loadProducts(), loadIntakes()]); renderAll(); return; }
+      // 다른 탭에서 로그아웃하거나 프로필이 바뀐 경우 — 예전엔 이 탭이 로그인된 척 계속 기록했다.
+      if (e.key === "cm:session" || e.key === "cm:users") {
+        const u = await CM.auth.refresh();
+        if (!u) { location.replace("login.html"); return; }
+        state.user = u; ui.renderTopbarUser($("topbarUser"));
+        await Promise.all([loadProducts(), loadIntakes()]); renderAll();
+      }
+    });
   }
 })();

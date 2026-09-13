@@ -35,10 +35,14 @@
 <script>
 (async function () {
   const CM = window.CM, ui = CM.ui, $ = (id) => document.getElementById(id);
-  const next = ui.qs("next") && /^[\w-]+\.html$/.test(ui.qs("next")) ? ui.qs("next") : "index.html";
+  // record.html?product=... 처럼 쿼리가 붙은 주소도 허용한다(같은 폴더의 .html 만, 외부 이동 불가).
+  const next = ui.qs("next") && /^[\w-]+\.html(\?[\w=%.\-~+&]*)?$/.test(ui.qs("next")) ? ui.qs("next") : "index.html";
   $("signupLink").href = "signup.html?next=" + encodeURIComponent(next);
   $("modeNote").innerHTML = CM.mode === "supabase" ? "클라우드 모드 · Supabase 인증" : "로컬 모드 · 계정과 기록이 <b>이 브라우저에만</b> 저장됩니다. (js/config.js 에 Supabase 키를 넣으면 클라우드 모드)";
   if (ui.qs("confirmed")) { $("ok").textContent = "이메일 확인이 끝났습니다. 로그인해 주세요."; $("ok").classList.remove("hidden"); }
+  if (ui.qs("disabled")) { $("error").textContent = "비활성화된 계정입니다. 관리자에게 문의하세요."; $("error").classList.remove("hidden"); }
+  const notice = CM.takeAuthNotice && CM.takeAuthNotice();
+  if (notice) { $("error").textContent = notice; $("error").classList.remove("hidden"); }
   await CM.auth.ready;
   if (CM.auth.getUser()) { location.replace(next); return; }
   $("form").addEventListener("submit", async (e) => {

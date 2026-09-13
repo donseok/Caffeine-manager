@@ -41,7 +41,9 @@
       price_checked_at: p.price_checked_at || null,
       source: String(p.source || "").trim() || "직접 입력",
       verified_at: p.verified_at || null,
-      tags: Array.isArray(p.tags) ? p.tags : String(p.tags || "").split(/[,\s]+/).filter(Boolean),
+      // 쉼표로만 분리한다. 공백으로도 잘랐더니 "콜드 브루" 같은 태그가 수정 저장만 해도 쪼개졌다.
+      tags: Array.isArray(p.tags) ? p.tags.map((t) => String(t).trim()).filter(Boolean)
+                                  : String(p.tags || "").split(",").map((t) => t.trim()).filter(Boolean),
       image_url: p.image_url || null,
     };
   }
@@ -72,7 +74,10 @@
   const local = {
     products() {
       let list = CM.lsGet(LS_PRODUCTS, null);
-      if (!list) { list = SEED.map((p) => ({ ...p, created_at: nowIso(), updated_at: nowIso(), created_by: null })); CM.lsSet(LS_PRODUCTS, list); }
+      if (!list) {
+        list = SEED.map((p) => ({ ...p, created_at: nowIso(), updated_at: nowIso(), created_by: null }));
+        try { CM.lsSet(LS_PRODUCTS, list); } catch (e) { console.warn("시드 캐시 저장 실패(읽기 전용으로 계속)", e); }
+      }
       return list;
     },
     saveProducts(list) { CM.lsSet(LS_PRODUCTS, list); },
@@ -104,7 +109,10 @@
     },
     async deleteProduct(id) {
       if (!isAdmin()) throw new Error("삭제 권한이 없습니다.");
-      local.saveProducts(local.products().filter((p) => p.id !== id));
+      const before = local.products();
+      const after = before.filter((p) => p.id !== id);
+      if (after.length === before.length) throw new Error("상품을 찾을 수 없습니다.");
+      local.saveProducts(after);
     },
     async reseed() {
       if (!isAdmin()) throw new Error("권한이 없습니다.");
@@ -132,7 +140,10 @@
     },
     async deleteIntake(id) {
       const me = user(); if (!me) throw new Error("로그인이 필요합니다.");
-      local.saveIntakes(local.intakes().filter((x) => !(x.id === id && (x.user_id === me.id || isAdmin()))));
+      const before = local.intakes();
+      const after = before.filter((x) => !(x.id === id && (x.user_id === me.id || isAdmin())));
+      if (after.length === before.length) throw new Error("기록을 찾을 수 없거나 삭제 권한이 없습니다.");
+      local.saveIntakes(after);
     },
 
     async listUsers() {
@@ -173,7 +184,9 @@
       opts = opts || {};
       let q = CM.sb.from("products").select("*").order("brand").order("name");
       if (opts.status) q = q.eq("status", opts.status);
-      // RLS 가 approved + 본인 pending(+관리자 전체) 로 이미 제한합니다.
+      // RLS 는 approved + 본인의 pending(+관리자 전체) 로 제한한다.
+      // 관리자 화면이 아니면 혹시 남은 반려 상품도 로컬 모드와 똑같이 빼 준다.
+      else if (!opts.all) q = q.neq("status", "rejected");
       const { data, error } = await q; if (error) fail(error); return data || [];
     },
     async getProduct(id) { const { data, error } = await CM.sb.from("products").select("*").eq("id", id).maybeSingle(); if (error) fail(error); return data; },
@@ -187,7 +200,11 @@
       if (!isAdmin()) delete allowed.status;
       const { data, error } = await CM.sb.from("products").update(allowed).eq("id", id).select("*").single(); if (error) fail(error); return data;
     },
-    async deleteProduct(id) { const { error } = await CM.sb.from("products").delete().eq("id", id); if (error) fail(error); },
+    async deleteProduct(id) {
+      const { data, error } = await CM.sb.from("products").delete().eq("id", id).select("id");
+      if (error) fail(error);
+      if (!data || !data.length) throw new Error("삭제하지 못했습니다. 권한이 없거나 이미 삭제된 상품입니다.");
+    },
     async reseed() { throw new Error("클라우드 모드에서는 supabase/seed.sql 을 SQL Editor 에서 실행하세요."); },
 
     async listIntakes(opts) {
@@ -205,7 +222,11 @@
       if (!user()) throw new Error("로그인이 필요합니다.");
       const { data, error } = await CM.sb.from("intakes").insert(makeIntakeRow(args)).select("*").single(); if (error) fail(error); return normalizeIntake(data);
     },
-    async deleteIntake(id) { const { error } = await CM.sb.from("intakes").delete().eq("id", id); if (error) fail(error); },
+    async deleteIntake(id) {
+      const { data, error } = await CM.sb.from("intakes").delete().eq("id", id).select("id");
+      if (error) fail(error);
+      if (!data || !data.length) throw new Error("삭제하지 못했습니다. 권한이 없거나 이미 삭제된 기록입니다.");
+    },
 
     async listUsers() {
       const [{ data: profiles, error: e1 }, { data: stats, error: e2 }] = await Promise.all([

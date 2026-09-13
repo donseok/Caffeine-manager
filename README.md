@@ -24,6 +24,8 @@ docs/             PLAN.md(계획) · REVIEW.md(배포 전 검토)
 
 `js/config.js` 의 Supabase 키가 비어 있으면 **로컬 모드**로 동작합니다. 계정과 기록이 *이 브라우저의 localStorage* 에만 저장되며, 서버 없이 모든 기능을 써볼 수 있습니다.
 
+> **공개 배포 시 주의** — 로컬 모드로 올리면 방문자마다 자기 브라우저에만 데이터가 쌓입니다. 기기·브라우저를 바꾸거나 방문 기록을 지우면 사라지고, 관리자 화면도 "내 브라우저의 데이터"만 관리합니다. 또 `<아이디>.github.io` 는 그 계정의 모든 저장소가 같은 출처(origin)를 공유하므로, 같은 계정의 다른 Pages 프로젝트가 이 앱의 localStorage 를 읽을 수 있습니다. 실제 사용자를 받으려면 아래 2번(Supabase)을 먼저 설정하세요.
+
 ```bash
 # 아무 정적 서버로 열면 됩니다 (팝업이 iframe 이라 file:// 보다 http:// 를 권장)
 python3 -m http.server 8080
@@ -46,9 +48,10 @@ python3 -m http.server 8080
 5. **Authentication → Providers → Email**
    - 테스트 단계에서는 *Confirm email* 을 끄면 가입 즉시 로그인됩니다. 켜 두면 확인 메일 링크를 눌러야 합니다.
 6. **Authentication → URL Configuration**
-   - Site URL: 배포 주소 (예: `https://<아이디>.github.io/caffeine-manager/`)
+   - Site URL: 배포 주소 (예: `https://donseok.github.io/Caffeine-manager/`)
    - Redirect URLs: 같은 주소 + `http://localhost:8080` (로컬 테스트용)
-7. 슈퍼관리자: `schema.sql` 의 `admin_emails` 테이블에 있는 이메일(기본 `donseok75@gmail.com`)로 가입하면 자동으로 `admin` 역할이 됩니다. 다른 관리자를 추가하려면 관리자 화면 → 사용자 → "관리자 지정", 또는 SQL 로 `admin_emails` 에 이메일을 넣으세요.
+7. 실행 결과에 `중복된 이메일 프로필이 있어 …` 라는 NOTICE 가 보이면, 같은 이메일을 쓰는 프로필 행이 둘 이상이라는 뜻입니다. `schema.sql` 안의 점검 쿼리로 확인해 가짜 행을 지운 뒤 파일을 다시 실행하세요.
+8. 슈퍼관리자: `schema.sql` 의 `admin_emails` 테이블에 있는 이메일(기본 `donseok75@gmail.com`)로 가입하면 자동으로 `admin` 역할이 됩니다. 다른 관리자를 추가하려면 관리자 화면 → 사용자 → "관리자 지정", 또는 SQL 로 `admin_emails` 에 이메일을 넣으세요.
 
 ### 데이터 구조
 
@@ -64,19 +67,20 @@ python3 -m http.server 8080
 ## 3. GitHub 에 올리고 배포하기 (GitHub Pages)
 
 ```bash
-# 1) GitHub 에서 새 저장소 생성 (예: caffeine-manager, Public)
+# 1) GitHub 에서 새 저장소 생성 (이 프로젝트: donseok/Caffeine-manager, Public)
 # 2) 이 폴더에서
-git remote add origin https://github.com/<아이디>/caffeine-manager.git
+git remote add origin https://github.com/donseok/Caffeine-manager.git
 git branch -M main
 git push -u origin main
 ```
 
 3. 저장소 **Settings → Pages → Build and deployment → Source** 를 **GitHub Actions** 로 선택
 4. `.github/workflows/deploy.yml` 이 main 브랜치에 push 될 때마다 자동 배포합니다. 1~2분 뒤
-   `https://<아이디>.github.io/caffeine-manager/` 에서 접속할 수 있습니다.
+   `https://donseok.github.io/Caffeine-manager/` 에서 접속할 수 있습니다.
 5. 이후 수정은 `git add -A && git commit -m "..." && git push` 만 하면 자동 반영됩니다.
 
 > 저장소를 Private 으로 두고 Pages 를 쓰려면 GitHub Pro 이상이 필요합니다. 코드에는 비밀 값이 없으므로(anon 키는 공개용) Public 이어도 안전합니다.
+> 다만 `js/config.js` 의 `ADMIN_EMAILS` 와 `supabase/schema.sql` 의 `admin_emails` 에 **개인 이메일이 그대로 들어갑니다.** 공개 저장소에 이메일을 노출하고 싶지 않다면 전용 별칭 주소(예: `admin+cm@…`)로 바꿔 두세요.
 
 ## 4. 시드 상품 수정
 

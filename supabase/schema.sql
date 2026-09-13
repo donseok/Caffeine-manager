@@ -36,6 +36,23 @@ create table if not exists public.profiles (
   updated_at     timestamptz not null default now()
 );
 
+-- 같은 이메일의 프로필이 둘 이상 생기면 admin_emails 소급 적용이 엉뚱한 행을 승격시킨다.
+-- 예전 스키마를 쓰던 프로젝트에는 이미 중복이 있을 수 있으므로, 실패해도 설치 전체가
+-- 롤백되지 않게 감싼다(SQL Editor 는 파일 전체를 한 트랜잭션으로 실행한다).
+do $$
+begin
+  create unique index if not exists profiles_email_lower_idx on public.profiles (lower(email));
+exception when unique_violation then
+  raise notice '중복된 이메일 프로필이 있어 profiles_email_lower_idx 를 만들지 못했습니다. 아래 쿼리로 확인하고 가짜 행을 지운 뒤 이 파일을 다시 실행하세요: %',
+    'select id, email, role, created_at from public.profiles p where exists (select 1 from public.profiles q where lower(q.email)=lower(p.email) and q.id<>p.id) order by lower(email), created_at;';
+end $$;
+
+-- 중복 이메일 점검 (위 notice 가 떴다면 실행해 보세요)
+--   select id, email, role, created_at from public.profiles p
+--   where exists (select 1 from public.profiles q where lower(q.email) = lower(p.email) and q.id <> p.id)
+--   order by lower(email), created_at;
+-- 가장 오래된 행이 진짜 계정입니다. 나머지를 지운 뒤 이 파일을 다시 실행하면 인덱스가 생깁니다.
+
 -- ----------------------------------------------------------------------------
 -- 3. 상품 카탈로그
 -- ----------------------------------------------------------------------------
@@ -106,7 +123,7 @@ $$;
 
 -- updated_at 자동 갱신
 create or replace function public.set_updated_at()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql set search_path = '' as $$
 begin new.updated_at = now(); return new; end $$;
 
 drop trigger if exists profiles_set_updated_at on public.profiles;
@@ -117,21 +134,47 @@ create trigger products_set_updated_at before update on public.products for each
 -- 가입 시 프로필 자동 생성 (+ admin_emails 에 있으면 admin)
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_email text := lower(coalesce(new.email, ''));
+  v_raw   text := nullif(new.raw_user_meta_data ->> 'daily_limit_mg', '');
+  v_limit integer := 400;
 begin
-  insert into public.profiles (id, email, display_name, role, daily_limit_mg)
-  values (
-    new.id,
-    lower(new.email),
-    coalesce(nullif(new.raw_user_meta_data ->> 'display_name', ''), split_part(new.email, '@', 1)),
-    case when exists (select 1 from public.admin_emails a where lower(a.email) = lower(new.email)) then 'admin' else 'user' end,
-    least(greatest(coalesce(round(nullif(new.raw_user_meta_data ->> 'daily_limit_mg', '')::numeric)::integer, 400), 50), 1500)
-  )
-  on conflict (id) do nothing;
+  -- 이메일이 없는 가입(전화번호·일부 OAuth)은 프로필을 만들지 않는다.
+  -- 예전에는 lower(null) 이 not null 제약에 걸려 가입 자체가 실패했다.
+  if v_email = '' then return new; end if;
+  -- raw_user_meta_data 는 클라이언트가 마음대로 넣을 수 있다. 숫자가 아니면 캐스팅에서
+  -- 예외가 나 auth.users insert 까지 롤백되므로("Database error saving new user") 먼저 검사한다.
+  if v_raw ~ '^[[:space:]]*[0-9]+(\.[0-9]+)?[[:space:]]*$' then
+    v_limit := least(greatest(round(v_raw::numeric)::integer, 50), 1500);
+  end if;
+  begin
+    insert into public.profiles (id, email, display_name, role, daily_limit_mg)
+    values (
+      new.id,
+      v_email,
+      coalesce(nullif(new.raw_user_meta_data ->> 'display_name', ''), split_part(v_email, '@', 1)),
+      case when exists (select 1 from public.admin_emails a where lower(a.email) = v_email) then 'admin' else 'user' end,
+      v_limit
+    )
+    on conflict (id) do nothing;
+  exception when unique_violation then
+    -- 같은 이메일의 프로필이 이미 있는 드문 경우. 여기서 예외가 나면 가입 자체가 롤백되므로 삼킨다.
+    raise notice '프로필 생성 건너뜀(이메일 중복): %', v_email;
+  end;
   return new;
 end $$;
 
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_user();
+-- auth.users 는 supabase_auth_admin 소유라서 `drop trigger` 가 권한 오류를 낼 수 있다.
+-- SQL Editor 는 전체를 한 트랜잭션으로 실행하므로 그 오류 하나로 스크립트 전체가 롤백된다.
+-- 그래서 없을 때만 만들고, 권한이 없으면 안내만 남기고 계속 진행한다.
+do $$
+begin
+  if not exists (select 1 from pg_trigger where tgname = 'on_auth_user_created' and tgrelid = 'auth.users'::regclass) then
+    execute 'create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_user()';
+  end if;
+exception when insufficient_privilege then
+  raise notice 'auth.users 에 트리거를 만들 권한이 없습니다. 프로필은 앱이 로그인 시 대신 만듭니다.';
+end $$;
 
 -- 일반 사용자는 자기 프로필의 role / is_active / email 을 바꿀 수 없음
 create or replace function public.protect_profile_columns()
@@ -151,9 +194,18 @@ create trigger profiles_protect_columns before update on public.profiles for eac
 -- 프로필을 클라이언트에서 직접 만들 때(트리거 실패 대비) admin_emails 규칙 적용
 create or replace function public.profile_insert_defaults()
 returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_auth_email text;
 begin
-  new.email := lower(new.email);
+  -- [중요] 이메일은 반드시 auth.users 에서 가져온다.
+  -- 클라이언트가 보낸 email 을 그대로 admin_emails 와 대조하면, 프로필 행이 아직 없는 계정이
+  -- 남의 관리자 이메일을 적어 넣는 것만으로 admin 이 될 수 있었다.
+  select lower(u.email) into v_auth_email from auth.users u where u.id = new.id;
+  -- 폴백으로 클라이언트 값을 쓰면 이메일 없는 계정(전화·일부 OAuth)이 구멍이 된다.
+  if v_auth_email is null then raise exception '이메일이 없는 계정은 프로필을 만들 수 없습니다.'; end if;
+  new.email := v_auth_email;
   if auth.uid() is not null and not public.is_admin() then
+    if auth.uid() <> new.id then raise exception '자신의 프로필만 만들 수 있습니다.'; end if;
     new.role := case when exists (select 1 from public.admin_emails a where lower(a.email) = new.email) then 'admin' else 'user' end;
     new.is_active := true;
   end if;
@@ -172,6 +224,7 @@ begin
       new.status := 'pending';
       new.created_by := auth.uid();
       new.verified_at := null;
+      new.slug := null; -- slug 는 시드 전용. 선점하면 seed.sql 재실행이 unique 충돌로 통째로 실패한다.
     else
       new.status := 'pending';
       new.created_by := old.created_by;
@@ -217,18 +270,19 @@ create policy profiles_insert_own on public.profiles for insert to authenticated
   with check (id = auth.uid());
 drop policy if exists profiles_update on public.profiles;
 create policy profiles_update on public.profiles for update to authenticated
-  using (id = auth.uid() or public.is_admin()) with check (id = auth.uid() or public.is_admin());
+  using ((id = auth.uid() and public.is_active_user()) or public.is_admin())
+  with check ((id = auth.uid() and public.is_active_user()) or public.is_admin());
 
 -- products
 drop policy if exists products_select on public.products;
 create policy products_select on public.products for select to authenticated
-  using (status = 'approved' or created_by = auth.uid() or public.is_admin());
+  using (status = 'approved' or (created_by = auth.uid() and status <> 'rejected') or public.is_admin());
 drop policy if exists products_insert on public.products;
 create policy products_insert on public.products for insert to authenticated
-  with check (public.is_active_user());
+  with check (public.is_active_user() and (created_by = auth.uid() or public.is_admin()));
 drop policy if exists products_update on public.products;
 create policy products_update on public.products for update to authenticated
-  using (public.is_admin() or (created_by = auth.uid() and status = 'pending'))
+  using (public.is_admin() or (created_by = auth.uid() and status = 'pending' and public.is_active_user()))
   with check (public.is_admin() or created_by = auth.uid());
 drop policy if exists products_delete on public.products;
 create policy products_delete on public.products for delete to authenticated
@@ -243,10 +297,11 @@ create policy intakes_insert on public.intakes for insert to authenticated
   with check (user_id = auth.uid() and public.is_active_user());
 drop policy if exists intakes_update on public.intakes;
 create policy intakes_update on public.intakes for update to authenticated
-  using (user_id = auth.uid()) with check (user_id = auth.uid());
+  using (user_id = auth.uid() and public.is_active_user())
+  with check (user_id = auth.uid() and public.is_active_user());
 drop policy if exists intakes_delete on public.intakes;
 create policy intakes_delete on public.intakes for delete to authenticated
-  using (user_id = auth.uid() or public.is_admin());
+  using ((user_id = auth.uid() and public.is_active_user()) or public.is_admin());
 
 -- 권한 (Supabase 기본값과 동일하지만 명시)
 grant usage on schema public to anon, authenticated;
@@ -255,7 +310,22 @@ grant select on public.user_stats to authenticated;
 revoke all on public.profiles, public.products, public.intakes, public.admin_emails, public.user_stats from anon;
 
 -- ----------------------------------------------------------------------------
--- 8. 이미 가입한 사용자에게 admin_emails 규칙을 소급 적용하고 싶을 때 (선택)
+-- 8. 이 스키마보다 먼저 가입한 사용자 보정
 -- ----------------------------------------------------------------------------
+-- 프로필 행이 없는 계정을 채운다. (없으면 앱이 클라이언트에서 만들게 되는데,
+--  그 경로는 위 트리거로 막아 두긴 했지만 애초에 열어 두지 않는 편이 낫다)
+insert into public.profiles (id, email, display_name, role)
+select distinct on (lower(u.email))
+       u.id,
+       lower(u.email),
+       coalesce(nullif(u.raw_user_meta_data ->> 'display_name', ''), split_part(lower(u.email), '@', 1)),
+       case when exists (select 1 from public.admin_emails a where lower(a.email) = lower(u.email)) then 'admin' else 'user' end
+from auth.users u
+where u.email is not null
+  and not exists (select 1 from public.profiles p where p.id = u.id)
+order by lower(u.email), u.id
+on conflict do nothing; -- 대상 미지정 = 모든 제약(이메일 unique 포함) 을 덮는다
+
+-- admin_emails 규칙 소급 적용
 update public.profiles p set role = 'admin'
 where lower(p.email) in (select lower(email) from public.admin_emails) and p.role <> 'admin';

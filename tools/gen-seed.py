@@ -63,6 +63,8 @@ sql_path = os.path.join(ROOT, "supabase", "seed.sql")
 with open(sql_path, "w", encoding="utf-8") as f:
     f.write("-- 자동 생성 파일 — data/products.seed.json 을 고친 뒤 `python3 tools/gen-seed.py` 로 다시 만드세요.\n")
     f.write("-- schema.sql 을 먼저 실행한 뒤 이 파일을 실행하세요. 여러 번 실행해도 안전합니다(upsert).\n")
+    f.write("-- 재실행하면 영양정보·가격·상태(status)·출처는 시드 값으로 되돌아가지만,\n")
+    f.write("-- 관리자가 눌러 둔 확인일(verified_at, price_checked_at) 은 그대로 둡니다.\n")
     f.write("insert into public.products\n  (id, slug, brand, brand_key, name, category, serving_label, serving_ml, caffeine_mg, sugar_g, kcal, base_price, price_note, price_checked_at, source, verified_at, tags, status)\nvalues\n")
     vals = []
     for r in rows:
@@ -78,6 +80,10 @@ with open(sql_path, "w", encoding="utf-8") as f:
     f.write("  category = excluded.category, serving_label = excluded.serving_label, serving_ml = excluded.serving_ml,\n")
     f.write("  caffeine_mg = excluded.caffeine_mg, sugar_g = excluded.sugar_g, kcal = excluded.kcal,\n")
     f.write("  base_price = excluded.base_price, price_note = excluded.price_note, tags = excluded.tags,\n")
+    # status·source 도 되돌린다. 예전에는 빠져 있어서 관리자가 시드 상품을 '반려' 하면
+    # seed.sql 을 다시 돌려도 영원히 숨겨진 채로 남았다.
+    # verified_at / price_checked_at 은 관리자가 직접 확인한 날짜라 일부러 건드리지 않는다.
+    f.write("  status = excluded.status, source = excluded.source,\n")
     f.write("  updated_at = now();\n")
 
 print("generated:", js_path, "(%d products)" % len(rows))
