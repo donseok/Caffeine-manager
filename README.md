@@ -13,7 +13,7 @@ admin.html        슈퍼관리자 (대시보드 · 상품 관리 · 승인 대�
 css/style.css     공통 스타일
 js/config.js      ★ Supabase 키 · 관리자 이메일 설정
 js/*.js           auth(인증) · store(데이터) · ui(공통) · app · record · admin
-supabase/         schema.sql(테이블·RLS·트리거) · seed.sql(시드 상품 35종)
+supabase/         schema.sql(테이블·RLS·트리거) · seed.sql(시드 상품 49종)
 data/ · tools/    시드 원본 JSON 과 생성기
 assets/brands/    브랜드 배지 — png 는 사용자가 넣은 제품 사진, svg 는 직접 그린 오리지널 아이콘
 docs/             PLAN.md(계획) · REVIEW.md(배포 전 검토)
@@ -39,7 +39,7 @@ python3 -m http.server 8080
 
 1. <https://supabase.com> 에서 새 프로젝트 생성 (무료 티어, 리전은 Northeast Asia(Seoul/Tokyo) 권장)
 2. **SQL Editor → New query** 에 `supabase/schema.sql` 전체를 붙여넣고 **Run**
-3. 같은 방법으로 `supabase/seed.sql` 실행 (시드 상품 35종 입력)
+3. 같은 방법으로 `supabase/seed.sql` 실행 (시드 상품 49종 입력)
 4. **Project Settings → API** 에서 `Project URL` 과 `anon public` 키를 복사해 `js/config.js` 에 입력
    ```js
    SUPABASE_URL: "https://xxxx.supabase.co",
