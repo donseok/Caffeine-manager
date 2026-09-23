@@ -31,9 +31,14 @@
   // 상품에는 brand_key 가 있지만, 섭취 기록에는 brand(표시명)만 저장되므로 이름으로도 찾는다.
   const BRAND_BADGES = { starbucks: "starbucks.png", redbull: "redbull.png", bacchus: "bacchus.png", monster: "monster.webp", cocacola: "cocacola.png", lotte: "lotte.jpg", "starbucks-rtd": "starbucks.png",
     // 편의점 커피(2026-09-24): CU·GS25 는 위키미디어 공용의 퍼블릭 도메인 BI, 맥심 T.O.P 는 동서식품 사이트 브랜드 로고
-    dongsuh: "maxim-top.png", cu: "cu.png", gs25: "gs25.png" };
+    dongsuh: "maxim-top.png", cu: "cu.png", gs25: "gs25.png",
+    // 시드 확장(2026-09-24): 카페 체인·셀시어스 — 이디야·투썸·커피빈·메가·컴포즈·셀시어스는 위키미디어 공용 퍼블릭 도메인 로고,
+    // 빽다방·할리스·폴바셋은 공식 사이트 헤더 로고(상표 — 상품 식별 목적). 더벤티·남양·동아오츠카·광동은 로고 없음(이니셜).
+    ediya: "ediya.png", twosome: "twosome.png", coffeebean: "coffeebean.png", mega: "mega.png", compose: "compose.png", celsius: "celsius.png", paik: "paik.png", hollys: "hollys.png", paulbassett: "paulbassett.png" };
   const BRAND_KEY_BY_NAME = { "스타벅스": "starbucks", "레드불": "redbull", "몬스터": "monster", "코카콜라": "cocacola", "동아제약": "bacchus", "박카스": "bacchus", "롯데칠성": "lotte", "스타벅스 RTD": "starbucks-rtd",
-    "동서식품": "dongsuh", "맥심": "dongsuh", "CU GET커피": "cu", "CU": "cu", "GS25 카페25": "gs25", "GS25": "gs25" };
+    "동서식품": "dongsuh", "맥심": "dongsuh", "CU GET커피": "cu", "CU": "cu", "GS25 카페25": "gs25", "GS25": "gs25",
+    "이디야커피": "ediya", "이디야": "ediya", "투썸플레이스": "twosome", "투썸": "twosome", "커피빈": "coffeebean", "메가MGC커피": "mega", "메가커피": "mega",
+    "컴포즈커피": "compose", "컴포즈": "compose", "셀시어스": "celsius", "빽다방": "paik", "할리스": "hollys", "폴바셋": "paulbassett" };
   // 상품 단위 사진(브랜드 사진보다 우선). 섭취 기록에는 product_name 만 남으므로 상품명으로 찾는다.
   // 2026-09-24: 롯데칠성 커피 2종 — 롯데칠성음료 공식 브랜드 페이지의 제품 사진에서 캔 부분만 잘라 사용.
   const PRODUCT_PHOTOS = { "레쓰비 마일드": "letsbe-mild.jpg", "칸타타 프리미엄 라떼": "cantata-premium-latte.jpg" };
