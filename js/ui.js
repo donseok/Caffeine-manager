@@ -123,7 +123,7 @@
     parts.push(`<span class="chip chip--storage${cloud ? "" : " chip--warn"}" title="${cloud ? "Supabase 에 저장됩니다" : "Supabase 설정 전 — 이 브라우저에만 저장됩니다"}"><span class="chip__dot"></span>${cloud ? "클라우드 저장" : "이 기기에 저장"}</span>`);
     if (u) {
       if (u.role === "admin") parts.push(`<a class="chip chip--admin" href="admin.html"><span class="chip__dot"></span>관리자</a>`);
-      if (!/stats.html$/.test(location.pathname)) parts.push(`<a class="chip chip--stats" href="stats.html"><span class="chip__dot"></span>주간 통계</a>`);
+      if (!/stats.html$/.test(location.pathname)) parts.push(`<a class="chip chip--stats" href="stats.html"><span class="chip__dot"></span>통계</a>`);
       parts.push(`<a class="chip chip--user" href="#" data-open-settings title="설정"><span class="chip__dot"></span>${ui.esc(u.displayName)}</a>`);
     }
     parts.push(`<button type="button" class="icon-btn" aria-label="설정" data-open-settings><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.42 1.42-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V20h-2v-.09a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.42-1.42.06-.06A1.7 1.7 0 0 0 9.42 15a1.7 1.7 0 0 0-1.56-1.03H7.8v-2h.09a1.7 1.7 0 0 0 1.56-1.03 1.7 1.7 0 0 0-.34-1.88L9.05 9l1.42-1.42.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V6.3h2v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06L19.83 9l-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03h.09v2H21A1.7 1.7 0 0 0 19.4 15Z"></path></svg></button>`);

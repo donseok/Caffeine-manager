@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>주간 통계 — 카페인 매니저</title>
-<meta name="description" content="이번 주 요일별 카페인·지출·기록 횟수를 한눈에 보고 지난주와 비교합니다.">
+<title>통계 — 카페인 매니저</title>
+<meta name="description" content="주간·월간 카페인·지출·기록 횟수를 한눈에 보고 지난 기간과 비교합니다.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%232D5BD1'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="css/style.css">
@@ -15,7 +15,7 @@
     <a class="brand" href="index.html">
       <span class="brand__dot"></span>
       <strong class="brand__name">카페인 매니저</strong>
-      <small class="brand__sub">주간 통계</small>
+      <small class="brand__sub">통계</small>
     </a>
     <div class="topbar__right" id="topbarUser"></div>
   </header>
@@ -24,13 +24,16 @@
     <!-- 주 선택 -->
     <section class="card stats-head">
       <div>
-        <p class="card__kicker">주간 통계</p>
+        <div class="segment segment--inline segment--period" id="periodSegment" role="tablist" aria-label="기간 단위">
+          <button type="button" class="is-active" data-period="week">주간</button>
+          <button type="button" data-period="month">월간</button>
+        </div>
         <h1 class="card__title" id="weekTitle">이번 주 카페인</h1>
         <p class="card__meta" id="weekRange">—</p>
       </div>
       <div class="weeknav" role="group" aria-label="주 선택">
         <button type="button" id="prevWeek" aria-label="이전 주">‹</button>
-        <button type="button" class="weeknav__label" id="thisWeek" title="이번 주로 이동">이번 주</button>
+        <button type="button" class="weeknav__label" id="thisWeek" title="현재 기간으로 이동">이번 주</button>
         <button type="button" id="nextWeek" aria-label="다음 주">›</button>
         <a class="btn-outline weeknav__home" href="index.html">← 메인으로</a>
       </div>
@@ -72,7 +75,7 @@
       <section class="card chart-card" aria-labelledby="chartTitle">
         <div class="card__head">
           <div>
-            <p class="card__kicker">요일별</p>
+            <p class="card__kicker" id="chartKicker">요일별</p>
             <h2 class="card__title" id="chartTitle">요일별 카페인</h2>
             <p class="card__meta" id="chartMeta">월요일부터 일요일까지 · 1회 제공량 기준</p>
           </div>
@@ -88,7 +91,7 @@
         <div class="chart__legend" id="chartLegend"></div>
         <div class="table-wrap">
           <table class="table table--compact" id="dayTable">
-            <thead><tr><th>요일</th><th class="num">횟수</th><th class="num">카페인</th><th class="num col-sugar">당류</th><th class="num">지출</th><th>상태</th></tr></thead>
+            <thead id="tableHead"></thead>
             <tbody id="dayRows"></tbody>
           </table>
         </div>
@@ -129,7 +132,7 @@
       </div>
       <div class="empty hidden" id="topEmpty">
         <span class="empty__icon">0</span>
-        <h3>이 주에는 기록이 없습니다</h3>
+        <h3 id="topEmptyTitle">이 주에는 기록이 없습니다</h3>
         <p>메인 화면에서 음료를 검색해 기록하면 여기에 통계가 쌓입니다.</p>
         <a class="btn-green" href="index.html" style="display:inline-flex;align-items:center;text-decoration:none">기록하러 가기</a>
       </div>
@@ -139,7 +142,7 @@
       <span class="principle__icon">i</span>
       <div>
         <h2>통계 계산 기준</h2>
-        <p>주는 월요일에 시작합니다. 카페인·당류는 기록한 수량 × 1회 제공량 기준이며, 지출은 기록할 때 직접 입력한 결제액만 더합니다. 하루 목표는 설정에서 바꿀 수 있습니다.</p>
+        <p>주는 월요일, 달은 1일에 시작합니다. 카페인·당류는 기록한 수량 × 1회 제공량 기준이며, 지출은 기록할 때 직접 입력한 결제액만 더합니다. 하루 목표는 설정에서 바꿀 수 있습니다.</p>
       </div>
     </section>
   </main>

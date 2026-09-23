@@ -440,6 +440,8 @@ body.popup-page { background: #fff; min-height: 0; }
 .chart-card .card__head { align-items: flex-start; }
 .segment--inline { display: inline-flex; margin-top: 14px; }
 .segment--inline button { flex: 0 0 auto; padding: 0 14px; }
+.segment--period { margin: 0 0 8px; }
+.segment--period button { height: 30px; font-size: 13px; }
 .chart { position: relative; margin-top: 12px; }
 .chart svg { display: block; max-width: 100%; height: auto; font-family: var(--font); }
 .chart__hit { cursor: pointer; }
