@@ -29,8 +29,11 @@
   // 브랜드 배지 — assets/brands/ 의 브랜드별 이미지(로고·제품 사진).
   //   svg 파일만 엠블럼처럼 작게, 나머지는 사진처럼 영역을 채워 표시한다.
   // 상품에는 brand_key 가 있지만, 섭취 기록에는 brand(표시명)만 저장되므로 이름으로도 찾는다.
-  const BRAND_BADGES = { starbucks: "starbucks.png", redbull: "redbull.png", bacchus: "bacchus.png", monster: "monster.webp", cocacola: "cocacola.png", lotte: "lotte.jpg", "starbucks-rtd": "starbucks.png" };
-  const BRAND_KEY_BY_NAME = { "스타벅스": "starbucks", "레드불": "redbull", "몬스터": "monster", "코카콜라": "cocacola", "동아제약": "bacchus", "박카스": "bacchus", "롯데칠성": "lotte", "스타벅스 RTD": "starbucks-rtd" };
+  const BRAND_BADGES = { starbucks: "starbucks.png", redbull: "redbull.png", bacchus: "bacchus.png", monster: "monster.webp", cocacola: "cocacola.png", lotte: "lotte.jpg", "starbucks-rtd": "starbucks.png",
+    // 편의점 커피(2026-09-24): CU·GS25 는 위키미디어 공용의 퍼블릭 도메인 BI, 맥심 T.O.P 는 동서식품 사이트 브랜드 로고
+    dongsuh: "maxim-top.png", cu: "cu.png", gs25: "gs25.png" };
+  const BRAND_KEY_BY_NAME = { "스타벅스": "starbucks", "레드불": "redbull", "몬스터": "monster", "코카콜라": "cocacola", "동아제약": "bacchus", "박카스": "bacchus", "롯데칠성": "lotte", "스타벅스 RTD": "starbucks-rtd",
+    "동서식품": "dongsuh", "맥심": "dongsuh", "CU GET커피": "cu", "CU": "cu", "GS25 카페25": "gs25", "GS25": "gs25" };
   ui.brandBadgeSrc = (p) => {
     if (!p) return null;
     const key = BRAND_BADGES[p.brand_key] ? p.brand_key : BRAND_KEY_BY_NAME[String(p.brand || "").trim()];
