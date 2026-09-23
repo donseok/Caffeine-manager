@@ -34,8 +34,13 @@
     dongsuh: "maxim-top.png", cu: "cu.png", gs25: "gs25.png" };
   const BRAND_KEY_BY_NAME = { "스타벅스": "starbucks", "레드불": "redbull", "몬스터": "monster", "코카콜라": "cocacola", "동아제약": "bacchus", "박카스": "bacchus", "롯데칠성": "lotte", "스타벅스 RTD": "starbucks-rtd",
     "동서식품": "dongsuh", "맥심": "dongsuh", "CU GET커피": "cu", "CU": "cu", "GS25 카페25": "gs25", "GS25": "gs25" };
+  // 상품 단위 사진(브랜드 사진보다 우선). 섭취 기록에는 product_name 만 남으므로 상품명으로 찾는다.
+  // 2026-09-24: 롯데칠성 커피 2종 — 롯데칠성음료 공식 브랜드 페이지의 제품 사진에서 캔 부분만 잘라 사용.
+  const PRODUCT_PHOTOS = { "레쓰비 마일드": "letsbe-mild.jpg", "칸타타 프리미엄 라떼": "cantata-premium-latte.jpg" };
   ui.brandBadgeSrc = (p) => {
     if (!p) return null;
+    const photo = PRODUCT_PHOTOS[String(p.name || p.product_name || "").trim()];
+    if (photo) return "assets/brands/" + photo;
     const key = BRAND_BADGES[p.brand_key] ? p.brand_key : BRAND_KEY_BY_NAME[String(p.brand || "").trim()];
     return key ? "assets/brands/" + BRAND_BADGES[key] : null;
   };
