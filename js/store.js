@@ -71,14 +71,38 @@
   // 로컬 모드
   // ==========================================================================
   const LS_PRODUCTS = "cm:products", LS_INTAKES = "cm:intakes";
+  // 이 브라우저에 한 번이라도 반영한 시드 상품 id 목록.
+  // 시드에 새 상품이 추가되면(예: 2026-09-22 편의점 커피 14종) 여기 없는 id 만 골라 자동으로 넣는다.
+  // 관리자가 일부러 지운 시드 상품은 이미 이 목록에 있으므로 되살아나지 않는다.
+  const LS_SEED_APPLIED = "cm:seedApplied";
   const local = {
     products() {
       let list = CM.lsGet(LS_PRODUCTS, null);
+      const applied = CM.lsGet(LS_SEED_APPLIED, null);
+      let changed = false;
       if (!list) {
         list = SEED.map((p) => ({ ...p, created_at: nowIso(), updated_at: nowIso(), created_by: null }));
-        try { CM.lsSet(LS_PRODUCTS, list); } catch (e) { console.warn("시드 캐시 저장 실패(읽기 전용으로 계속)", e); }
+        changed = true;
+      } else {
+        // 예전 버전(cm:seedApplied 없음)은 캐시에 들어 있는 시드 id 를 반영된 것으로 본다.
+        const seen = new Set(applied || list.map((p) => p.id));
+        const have = new Set(list.map((p) => p.id));
+        SEED.forEach((p) => {
+          if (seen.has(p.id) || have.has(p.id)) return;
+          list.push({ ...p, created_at: nowIso(), updated_at: nowIso(), created_by: null });
+          changed = true;
+        });
+      }
+      if (changed || !applied) {
+        try { CM.lsSet(LS_PRODUCTS, list); local.markSeedApplied(); }
+        catch (e) { console.warn("시드 캐시 저장 실패(읽기 전용으로 계속)", e); }
       }
       return list;
+    },
+    markSeedApplied() {
+      const seen = new Set(CM.lsGet(LS_SEED_APPLIED, []));
+      SEED.forEach((p) => seen.add(p.id));
+      CM.lsSet(LS_SEED_APPLIED, Array.from(seen));
     },
     saveProducts(list) { CM.lsSet(LS_PRODUCTS, list); },
     intakes() { return CM.lsGet(LS_INTAKES, []); },
@@ -117,8 +141,9 @@
     async reseed() {
       if (!isAdmin()) throw new Error("권한이 없습니다.");
       const list = local.products(); const have = new Set(list.map((p) => p.id)); let added = 0;
+      // 관리자가 직접 누른 경우에는 지웠던 시드 상품도 되살린다.
       SEED.forEach((p) => { if (!have.has(p.id)) { list.push({ ...p, created_at: nowIso(), updated_at: nowIso(), created_by: null }); added++; } });
-      local.saveProducts(list); return added;
+      local.saveProducts(list); local.markSeedApplied(); return added;
     },
 
     async listIntakes(opts) {
