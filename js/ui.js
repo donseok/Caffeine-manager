@@ -115,6 +115,39 @@
     },
   };
 
+  // ---------- PWA: 서비스 워커 · 홈 화면 추가 ----------
+  // iframe(팝업) 안에서는 등록하지 않는다 — 부모 페이지가 이미 했다.
+  let installPrompt = null;
+  ui.pwa = {
+    supported: "serviceWorker" in navigator,
+    standalone: () => (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true,
+    ios: () => /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream,
+    canInstall: () => !!installPrompt,
+    async install() {
+      if (!installPrompt) return false;
+      const p = installPrompt; installPrompt = null;
+      p.prompt(); const r = await p.userChoice.catch(() => null);
+      ui.renderInstallButtons();
+      return !!(r && r.outcome === "accepted");
+    },
+  };
+  ui.renderInstallButtons = () => {
+    document.querySelectorAll("[data-install]").forEach((el) => el.classList.toggle("hidden", !installPrompt || ui.pwa.standalone()));
+  };
+  if (ui.pwa.supported && !ui.popupPage.inFrame()) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").then((reg) => {
+        // 새 버전이 설치되면 다음 방문부터 적용된다. 이미 열려 있는 화면에는 한 번만 알린다.
+        reg.addEventListener("updatefound", () => {
+          const w = reg.installing; if (!w) return;
+          w.addEventListener("statechange", () => { if (w.state === "installed" && navigator.serviceWorker.controller) ui.toast("새 버전이 준비되었습니다. 새로고침하면 적용됩니다."); });
+        });
+      }).catch((e) => console.warn("서비스 워커 등록 실패", e));
+    });
+    window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; ui.renderInstallButtons(); });
+    window.addEventListener("appinstalled", () => { installPrompt = null; ui.renderInstallButtons(); ui.toast("홈 화면에 추가했습니다.", "ok"); });
+  }
+
   // ---------- 헤더 사용자 영역 ----------
   ui.renderTopbarUser = (container) => {
     const u = CM.auth.getUser(); if (!container) return;
@@ -126,8 +159,11 @@
       if (!/stats.html$/.test(location.pathname)) parts.push(`<a class="chip chip--stats" href="stats.html"><span class="chip__dot"></span>통계</a>`);
       parts.push(`<a class="chip chip--user" href="#" data-open-settings title="설정"><span class="chip__dot"></span>${ui.esc(u.displayName)}</a>`);
     }
+    parts.push(`<button type="button" class="btn-install hidden" data-install title="홈 화면에 추가"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"></path><path d="m7 10 5 5 5-5"></path><path d="M5 20h14"></path></svg><span>앱 설치</span></button>`);
     parts.push(`<button type="button" class="icon-btn" aria-label="설정" data-open-settings><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.42 1.42-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V20h-2v-.09a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.42-1.42.06-.06A1.7 1.7 0 0 0 9.42 15a1.7 1.7 0 0 0-1.56-1.03H7.8v-2h.09a1.7 1.7 0 0 0 1.56-1.03 1.7 1.7 0 0 0-.34-1.88L9.05 9l1.42-1.42.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V6.3h2v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06L19.83 9l-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03h.09v2H21A1.7 1.7 0 0 0 19.4 15Z"></path></svg></button>`);
     container.innerHTML = parts.join("");
+    container.querySelectorAll("[data-install]").forEach((el) => el.addEventListener("click", () => ui.pwa.install()));
+    ui.renderInstallButtons();
     container.querySelectorAll("[data-open-settings]").forEach((el) => el.addEventListener("click", (e) => {
       e.preventDefault();
       ui.openPopup("settings.html", { title: "설정", height: 520, onMessage: (m) => { if (m.type === "profile:updated") { CM.auth.refresh().then(() => { ui.renderTopbarUser(container); document.dispatchEvent(new CustomEvent("cm:profile", { detail: m })); }); } if (m.type === "signed-out") { location.replace("login.html"); } } });

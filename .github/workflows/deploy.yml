@@ -30,6 +30,8 @@ jobs:
         run: |
           V="${GITHUB_SHA:0:8}"
           sed -i -E "s#(href|src)=\"(css|js)/([^\"?]+)\"#\1=\"\2/\3?v=$V\"#g" *.html
+          # 서비스 워커 캐시 이름도 커밋마다 바꿔 예전 캐시를 버리게 한다
+          sed -i "s#__BUILD__#$V#" sw.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

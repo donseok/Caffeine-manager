@@ -11,6 +11,7 @@ product-form.html 상품 직접 추가 팝업
 settings.html     설정 팝업 (표시 이름 · 하루 목표 · 로그아웃)
 login.html        로그인          signup.html  회원가입
 admin.html        슈퍼관리자 (대시보드 · 상품 관리 · 승인 대기 · 사용자)
+manifest.webmanifest · sw.js · assets/icons/   PWA — 홈 화면 추가, 오프라인 캐시(페이지·스크립트는 네트워크 우선, 이미지·CDN 은 캐시 우선)
 css/style.css     공통 스타일
 js/config.js      ★ Supabase 키 · 관리자 이메일 설정
 js/*.js           auth(인증) · store(데이터) · ui(공통) · app · record · admin

@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>설정 — 카페인 매니저</title>
+<meta name="theme-color" content="#1F6F5B">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -23,6 +24,7 @@
     <div class="form-error hidden" id="error"></div>
     <div class="form-ok hidden" id="ok">저장했습니다.</div>
     <div class="note" id="modeNote" style="margin-top:16px"></div>
+    <div class="note" id="pwaNote" style="margin-top:8px"></div>
     <div class="popup__actions" style="justify-content:space-between">
       <button type="button" class="btn-danger" id="logoutBtn">로그아웃</button>
       <div style="display:flex;gap:8px">
@@ -48,6 +50,11 @@
   $("modeNote").innerHTML = CM.mode === "supabase"
     ? `저장 위치: <b>클라우드(Supabase)</b> — 어느 기기에서 로그인해도 같은 기록을 봅니다.${user.role === "admin" ? " · 이 계정은 <b>슈퍼관리자</b>입니다." : ""}`
     : `저장 위치: <b>이 브라우저(로컬 모드)</b> — js/config.js 에 Supabase 키를 넣으면 클라우드 저장으로 바뀝니다.${user.role === "admin" ? " · 이 계정은 <b>슈퍼관리자</b>입니다." : ""}`;
+  // 홈 화면 추가 안내 — 설치 프롬프트는 부모(index) 창이 갖고 있으므로 팝업에서는 안내만 한다.
+  const pwa = ui.pwa || {};
+  $("pwaNote").innerHTML = pwa.standalone && pwa.standalone() ? "홈 화면에 추가된 <b>앱 모드</b>로 실행 중입니다. 오프라인에서도 기록할 수 있습니다."
+    : pwa.ios && pwa.ios() ? "<b>홈 화면에 추가</b>: Safari 하단의 공유 버튼 → <b>홈 화면에 추가</b>를 누르면 앱처럼 쓸 수 있습니다."
+    : "<b>홈 화면에 추가</b>: 헤더의 <b>앱 설치</b> 버튼이나 브라우저 주소창의 설치 아이콘을 누르면 앱처럼 쓸 수 있습니다.";
   $("form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const err = $("error"), ok = $("ok"); err.classList.add("hidden"); ok.classList.add("hidden");

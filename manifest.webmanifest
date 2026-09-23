@@ -1,0 +1,21 @@
+{
+  "name": "카페인 매니저",
+  "short_name": "카페인",
+  "description": "음료를 검색해 카페인·당류·칼로리를 확인하고 섭취를 기록하는 개인용 카페인 관리 앱",
+  "lang": "ko",
+  "start_url": "./index.html?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6F7F9",
+  "theme_color": "#1F6F5B",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "통계", "short_name": "통계", "description": "주간·월간 카페인 통계", "url": "./stats.html?source=pwa", "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
