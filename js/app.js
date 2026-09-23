@@ -71,14 +71,14 @@
   function priceInfo(p) {
     const mine = state.prices[p.id];
     if (mine) return { price: ui.fmtWon(mine.price), note: `내 최근 결제 · ${ui.isSameDay(mine.at) ? "오늘" : ui.fmtDateShort(mine.at)}` };
-    if (p.base_price != null) return { price: ui.fmtWon(p.base_price), note: `${p.price_note || "기준가"} · ${p.price_checked_at ? ui.fmtDateShort(p.price_checked_at) + " 확인" : "확인 필요"}` };
+    if (p.base_price != null) return { price: ui.fmtWon(p.base_price), note: `${p.price_note || "기준가"}${p.price_checked_at ? " · " + ui.fmtDateShort(p.price_checked_at) + " 확인" : ""}` };
     return { price: "가격 미입력", note: p.price_note || "기록 시 결제액을 입력하세요" };
   }
   function productCard(p) {
     const cat = ui.catInfo(p.category), pr = priceInfo(p);
     const badge = p.status === "pending" ? `<span class="badge badge--check" title="관리자 승인 전 · 내게만 보임">승인 대기</span>`
       : p.verified_at ? `<span class="badge" title="${ui.esc(p.source || "")} · ${ui.esc(p.verified_at)} 확인">${ui.esc((p.source || "공식").replace(" 영양정보", ""))} · ${ui.fmtDateShort(p.verified_at)} 확인</span>`
-      : `<span class="badge badge--check" title="${ui.esc(p.source || "출처 미상")} · 아직 재확인하지 않은 수치">확인 필요</span>`;
+      : ""; // 미확인 수치는 사용자 화면에서 배지를 띄우지 않는다(관리자 화면에는 '확인 필요' 로 남음)
     const badgeSrc = ui.brandBadgeSrc(p);
     const img = p.image_url ? `<img src="${ui.esc(p.image_url)}" alt="${ui.esc(p.brand)}">`
       : badgeSrc ? `<img class="${ui.isBrandPhoto(badgeSrc) ? "product__photo" : "product__badge"}" src="${ui.esc(badgeSrc)}" alt="${ui.esc(p.brand)}">`
