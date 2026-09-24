@@ -12,7 +12,7 @@ const CACHE = "cm-" + BUILD;
 const PRECACHE = [
   "./", "./index.html", "./stats.html", "./record.html", "./product-form.html", "./settings.html", "./login.html", "./signup.html", "./admin.html",
   "./css/style.css",
-  "./js/config.js", "./js/seed-products.js", "./js/auth.js", "./js/store.js", "./js/ui.js", "./js/app.js", "./js/stats.js", "./js/record.js", "./js/admin.js",
+  "./js/config.js", "./js/seed-products.js", "./js/auth.js", "./js/store.js", "./js/ui.js", "./js/app.js", "./js/stats.js", "./js/record.js", "./js/admin.js", "./js/chat.js",
   "./manifest.webmanifest",
   "./assets/icons/icon-192.png", "./assets/icons/icon-512.png",
 ];

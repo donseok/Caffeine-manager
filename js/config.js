@@ -19,4 +19,12 @@ window.APP_CONFIG = {
   HALF_LIFE_HOURS: 5,       // 잔존 카페인 추정에 쓰는 반감기
   PAGE_SIZE: 8,             // 검색 결과 한 번에 보여줄 개수
   APP_NAME: "카페인 매니저",
+
+  // 챗봇(카피) — Google Gemini
+  //   API 키는 여기에 넣지 마세요(공개 저장소). 챗봇 패널의 ⚙ 설정에서 입력하면 이 브라우저에만 저장됩니다.
+  //   로컬 실험용으로만 GEMINI_API_KEY 를 채우고 커밋하지 않는 방법도 있습니다.
+  CHAT_NAME: "카피",
+  GEMINI_API_KEY: "",
+  GEMINI_MODEL: "gemini-3.8-flash-lite",                       // 1순위 — 키의 모델 목록에 있으면 자동 선택
+  GEMINI_FALLBACK_MODELS: ["gemini-3.5-flash-lite", "gemini-3.8-flash"], // 없을 때 순서대로
 };
